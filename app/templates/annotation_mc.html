@@ -1,0 +1,33 @@
+<html>
+<head>
+  <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/pieval.css') }}">
+  <link rel= "script" type= "text/javascript" href= "{{ url_for('static',filename='scripts/pieval.js') }}">
+  <meta name=”viewport” content=”width=device-width, initial-scale=1″>
+  <title>Annotation Page for {{ one_example.project_name }}</title>
+</head>
+<body>
+  <div class="topnav">
+    <a href = {{ url_for('pievalIndex') }} onmouseover="changeClass">Project Index (Home)</a>
+    <a href= {{ url_for('logout') }} onmouseover="changeClass">Logout</a>
+  </div>
+
+  <p><b>Prompt: </b>{{ one_example.prompt }}</p>
+  <p><b>Data: </b>{{ one_example.data }}</p>
+  <div class="center_container">
+    <hr>
+    <p>{{ one_example.prompt }}</p>
+    <form action="{{ url_for('record_annotation') }}" method="post">
+      <label for="class_dd">What's the correct class</label>
+      <input type="text" id="class_dd" name="response" list="class_list">
+      <datalist id="class_list">
+        {% for class in proj_classes %}
+          <option value="{{ class }}">{{ class }}</option>
+        {% endfor %}
+      </datalist>
+      <div class="radio-submit">
+        <input type="submit">
+      </div>
+    </form>
+  </div>
+</body>
+</html>

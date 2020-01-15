@@ -1,0 +1,16 @@
+project_name,example_id,source_id,data,prompt
+kappa_lambda,0,100,snippet 0: kappa restricted plasma sheets with cd138,There IS a cloncal/monotypic plasma cell population
+kappa_lambda,1,101,snippet 1: kappa: present in subset of cells. lambda: present is subset of cells,There is NOT a cloncal/monotypic plasma cell population
+kappa_lambda,2,102,"snippet 2: ish polytypic kappa, polytypic lambda. flow: kappa restricted in <1% of cell population",There is NOT a cloncal/monotypic plasma cell population
+kappa_lambda,3,103,"snippet 3: kappa: absent, lambda: present",There IS a cloncal/monotypic plasma cell population
+kappa_lambda,4,104,"snippet 4: kappa: blah blah blah, lambda: blah blah blah",There is NOT a cloncal/monotypic plasma cell population
+cncr_site,0,1000,cs snippet text 0,Lung IS the cancer site
+cncr_site,1,1001,cs snippet text 1,Bone Marrow IS the cancer site
+cncr_site,2,1002,cs snippet text 2,Bone Marrow IS the cancer site
+cncr_hist,0,10000,ch snippet text 0,Adenocarcinoma IS the cancer histology
+cncr_hist,1,10001,ch snippet text 1,Adenocarcinoma IS the cancer histology
+cncr_hist,2,10002,ch snippet text 2,Adenocarcinoma IS the cancer histology
+cncr_hist,3,10003,ch snippet text 3,Myeloma IS the cancer histology
+cncr_hist,4,10004,ch snippet text 4,Myeloma IS the cancer histology
+cncr_hist,5,10005,ch snippet text 5,Myeloma IS the cancer histology
+cncr_hist,6,10006,ch snippet text 6,Myeloma IS the cancer histology

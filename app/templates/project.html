@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/pieval.css') }}">
+  <link rel= "script" type= "text/javascript" href= "{{ url_for('static',filename='scripts/pieval.js') }}">
+  <meta name=”viewport” content=”width=device-width, initial-scale=1″>
+  <title>{{ project_metadata.project_name }}</title>
+</head>
+<body>
+  <div class="topnav">
+    <a href = {{ url_for('pievalIndex') }} onmouseover="changeClass">Project Index (Home)</a>
+    <a href= {{ url_for('logout') }} onmouseover="changeClass">Logout</a>
+  </div>
+  <div class="center_container">
+    <h2>Project: '{{ project_metadata.project_name }}'</h2>
+    <p><b>Description: </b>{{ project_metadata.project_description }}</p>
+    <p><b>Status: </b>You have completed {{ user_examples }} out of {{ total_examples }} records in this project</p>
+    <br>
+
+    <form method="GET" action={{ url_for('annotate_example') }}>
+      <div class="radio-submit">
+      <input type="submit" value="Start Annotating!">
+      </div>
+    </form>
+  </div>
+</body>
+</html>

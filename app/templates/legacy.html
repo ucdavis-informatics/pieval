@@ -1,0 +1,18 @@
+<form action="{{ url_for('record_annotation') }}" method="post">
+  <input type="radio" name="response" value="correct"> Correct<br>
+  <input type="radio" name="response" value="incorrect"> Incorrect<br>
+  <input type="radio" name="response" value="review"> Review<br>
+  <input type="radio" name="response" value="pass"> Pass<br>
+  <input type="submit">
+</form>
+
+
+
+<select name="response">
+  {% for class in proj_classes %}
+  <option value="{{ class }}">{{ class }}</option>
+  {% endfor %}
+</select>
+
+
+<a href = {{ url_for('annotate_example') }}>Start Annotating!</a>
