@@ -98,7 +98,7 @@ export FLASK_ENV=development
 ```
 1. Run App
 ```sh
-python pieval.py
+python run.py
 ```
 
 1. Access app by URL
