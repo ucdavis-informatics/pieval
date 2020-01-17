@@ -7,8 +7,11 @@
 </head>
 <body>
   <div class="topnav">
-    <a href = {{ url_for('pievalIndex') }} onmouseover="changeClass">Project Index (Home)</a>
-    <a href= {{ url_for('logout') }} onmouseover="changeClass">Logout</a>
+    <a href = {{ url_for('pievalIndex') }} onmouseover="changeClass">Project Index</a>
+    {% if 'prev_example' in session.keys() %}
+    <a href = {{ url_for('annotate_example', doh='yes') }} onmouseover="changeClass">Doh!</a>
+    {% endif %}
+    <a class="right" href= {{ url_for('logout') }} onmouseover="changeClass">Logout</a>
   </div>
   <div class="center_container">
     <h3>You finished this project!</h3>

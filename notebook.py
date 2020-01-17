@@ -118,3 +118,5 @@ test_list.remove(2)
 
 
 # %%
+schema_name = 'my_schema_name'
+f"""select * from {my_schema_name}"""

@@ -9,6 +9,7 @@ from random import shuffle
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
+import json
 # siblings
 from app.data_loader import FileDataLoader, DBDataLoader
 
@@ -18,14 +19,6 @@ from app import app
 # app environ
 # variables/dataloader/logger
 ##########################################################################
-# construct data loader based on env file
-if app.config['DATASOURCE_TYPE'] == 'file':
-    pv_dl = FileDataLoader(app.config['DATASOURCE_LOCATION'])
-elif app.config['PIEVAL_DATASOURCE_TYPE'] == 'db':
-    pv_dl = DBDataLoader(app.config['VAULT_TOKEN'],
-                         app.config['VAULT_SERVER'],
-                         app.config['DATASOURCE_LOCATION'])
-
 logger = logging.getLogger()
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 logger.setLevel(logging.DEBUG)
@@ -39,6 +32,15 @@ ch = logging.StreamHandler()
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+# construct data loader based on env file
+if app.config['DATASOURCE_TYPE'] == 'file':
+    pv_dl = FileDataLoader(app.config['DATASOURCE_LOCATION'], logger)
+elif app.config['DATASOURCE_TYPE'] == 'db':
+    pv_dl = DBDataLoader(app.config['VAULT_TOKEN'],
+                         app.config['VAULT_SERVER'],
+                         app.config['DATASOURCE_LOCATION'],
+                         app.config['DB_SCHEMA'],
+                         logger)
 
 ####################################################################
 # web events
@@ -188,7 +190,8 @@ def get_multiclass_annotation():
         logger.debug(f"In get_multiclass_annotation() proj_classes = {proj_classes}")
         return render_template('annotation_mc.html',
                                 one_example=one_example,
-                                proj_classes=proj_classes)
+                                proj_classes=proj_classes,
+                                proj_class_data = proj_classes)
     else:
         logger.error("Not authorized for this project")
         return pievalIndex()
@@ -204,7 +207,7 @@ def record_annotation():
         cur_example = session['cur_example']
         response = request.form['response']
         user_ip = request.remote_addr
-        cur_time = datetime.now()
+        cur_time = datetime.now().replace(microsecond=0)
 
         if project_mode == 'multiclass' and response == 'disagree':
             # get class specification

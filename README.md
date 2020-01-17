@@ -22,9 +22,9 @@ This file is NOT checked into the git repo because it may contain secrets.  This
 # data source config
 #################
 '''
-The persistence layer can be either filesystem (csv files) or and RDMBS database.  The file system approach is good for feature development but not appropriate for production deployments
-
-As of 2019-01-15 - the db data loader class is still in development.  Don't use yet
+The persistence layer can be either filesystem (csv files) or and RDMBS database
+The file system approach is good for feature development but not appropriate for
+production deployments
 
 For prod deployments:
 - change DATASOURCE_TYPE = 'db'
@@ -32,7 +32,14 @@ For prod deployments:
 Yes, this pretty much binds the app to UCD deployments but, vault goodness...
 '''
 DATASOURCE_TYPE = 'file'
+
+# value is either filesystem if DATASOURCE_TYPE == 'file' path or vault path if DATASOURCE_TYPE == 'db'
 DATASOURCE_LOCATION = 'example_database/'
+
+# defaulted to pieval.
+# Change this is you want to place tables in a different schema
+# only relevant if DATASOURCE_TYPE == 'db'
+DB_SCHEMA = 'pieval'
 
 ####################
 # logging config
@@ -79,8 +86,36 @@ Install dependencies from requirements.txt
 pip install -r requirements.txt
 ```
 
+### Building the database - optional
+If you want to use an RDMBS, you will need to first build out the database schema.  In theory, any RDMBS you can connect to with sqlalchemy will work but this has only been tested against MSSQL and Oracle to date.  The database build has been scripted to make your life easy(er).  
+**NOTE:**  The script assumes you have already created an empty 'pieval' schema on the destination database and you have working credentials for this schema store in a vault server at the vault path in config.py  
+
+Creating the database schema in Oracle (assuming you have a privileged account and can sign in):  
+Oracle users are equal to schemas, so you will create a new db user here.  
+```sql
+create user pieval identified by a_strong_password;
+grant create table to pieval;
+grant create session to pieval;
+grant unlimited tablespace to pieval;
+```
+
+Creating the pieval schema in mssql server (assuming you have a privileged account and can sign in):
+This also assumes you already have a database in which to host the pieval schema  
+```sql
+CREATE SCHEMA pieval;
+```
+
+To have build_sql_database.py build the tables for you:  
+1. modify instance/config.py with the database paramaters of your choosing
+1. from within an activated pieval venv run:
+```sh
+# flip yes to no in the keep_example_data argument if you want an empty database
+python build_sql_database.py --keep_example_data yes
+```
+
+
 ### Running the app - locally
-When running the app locally, it is best to start by using the example database that comes packaged in the repo.  If you created your instance/config.py using the example above, you are good to go.  When you launch you will land on a login screen.  There are 3 users pre-created in the example database:
+When running the app locally, it is best to start by using the example database that comes packaged in the repo.  If you set DATASOURCE_TYPE = 'file' and DATASOURCE_LOCATION = 'example_database/' in your instance/config.py file then the app will launch using the example data provide with the code.  When you launch you will land on a login screen.  There are 3 users pre-created in the example data:
 1. awriedl
 1. jp
 1. asr
