@@ -2,19 +2,23 @@
 index.py - main app module for pieval.  Will put user on home page
 '''
 # Imports
-from flask import url_for, render_template, session, request
+from flask import url_for, render_template, session, request, redirect, flash
 import pandas as pd
 from datetime import datetime
 from random import shuffle
 import logging
 from logging.handlers import TimedRotatingFileHandler
-import os
-import json
+from functools import wraps
+# auth imports
+from flask_oidc import OpenIDConnect
+
 # siblings
 from app.data_loader import FileDataLoader, DBDataLoader
 
 # define the app
 from app import app
+# wrap app in auth
+oidc = OpenIDConnect(app)
 ##########################################################################
 # app environ
 # variables/dataloader/logger
@@ -33,6 +37,8 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 # construct data loader based on env file
+# consider using flask-sqlalchemy.  This is app scoped not sessio managed
+# >may< not scale.  Tested with 3 concurrent users and all things fine
 if app.config['DATASOURCE_TYPE'] == 'file':
     pv_dl = FileDataLoader(app.config['DATASOURCE_LOCATION'], logger)
 elif app.config['DATASOURCE_TYPE'] == 'db':
@@ -42,14 +48,75 @@ elif app.config['DATASOURCE_TYPE'] == 'db':
                          app.config['DB_SCHEMA'],
                          logger)
 
+
+################################################################
+# Functions
+################################################################
+# build a logged in decorator to avoid duplicating login code...
+def logged_in(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('logged_in'):
+            return f(*args, **kwargs)
+        else:
+            flash('Please log in first.')
+            return redirect(url_for('login'))
+    return decorated_function
+
+
+def checkAuthZ(project_name, user_name):
+    user_proj_list = pv_dl.getProjectUsers()[user_name]
+    return True if project_name in user_proj_list else False
+
+
+def list_diff(l1, l2):
+    return list(set(l1) - set(l2))
+
+
 ####################################################################
 # web events
 ####################################################################
+# @app.route('/login', methods=['GET', 'POST'])
+@app.route('/login')
+@oidc.require_login
+def login():
+    logger.debug(f"Entry to login func session: {session}")
+    if oidc.user_loggedin:
+        session['user_name'] = oidc.user_getfield('preferred_username')
+        session['user_groups'] = oidc.user_getfield('groups')
+        session['logged_in'] = True
+        logger.debug(f"After OIDC param updates to session: {session}")
+        return redirect(url_for('pievalIndex'))
+    else:
+        return render_template('user_not_found.html')
+
+
+@app.route('/logout')
+def logout():
+    if session.get('logged_in'):
+        session.pop('logged_in')
+    if session.get('user_name'):
+        session.pop('user_name')
+    if session.get('example_order'):
+        session.pop('example_order')
+    if session.get('cur_example'):
+        session.pop('cur_example')
+    oidc.logout()
+    # should be as simple as:
+    # return redirect(url_for('pievalIndex'))
+    # but due to flask-oidc bug it needs to be
+    return redirect(oidc.client_secrets.get('issuer')+'/protocol/openid-connect/logout?redirect_uri='+request.host_url+'/')
+
+
 @app.route("/")
+@logged_in
 def pievalIndex():
     if not session.get('logged_in'):
-        return render_template('login.html')
+        # if not logged in
+        # return render_template('login.html')
+        redirect(url_for('login'))
     else:
+        # user is logged in
         # user is returning to index, possibly after annotating
         # reset their state by conditionally clearing session vars
         vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example']
@@ -89,26 +156,8 @@ def pievalIndex():
         return render_template('index.html', projects=pieval_projects.to_dict(orient='records'))
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    user_name = request.form['user_name']
-    session['logged_in'] = True
-    session['user_name'] = user_name
-    return pievalIndex()
-
-
-@app.route('/logout')
-def logout():
-    if session.get('logged_in'):
-        session.pop('logged_in')
-    if session.get('example_order'):
-        session.pop('example_order')
-    if session.get('cur_example'):
-        session.pop('cur_example')
-    return pievalIndex()
-
-
 @app.route("/project/<project_name>")
+@logged_in
 def project(project_name=None):
     if not project_name:
         return "You did not provide a project name, Try again" + url_for('pievalIndex')
@@ -146,6 +195,7 @@ def project(project_name=None):
 
 @app.route("/annotate_example")
 @app.route("/annotate_example/<doh>")
+@logged_in
 def annotate_example(doh='no'):
     if checkAuthZ(session['cur_proj'], session['user_name']):
         if doh == 'yes':
@@ -179,6 +229,7 @@ def annotate_example(doh='no'):
 
 
 # @app.route("/annotate_mc_example")
+@logged_in
 def get_multiclass_annotation():
     logger.debug('Getting a multiclass example')
     if checkAuthZ(session['cur_proj'], session['user_name']):
@@ -198,6 +249,7 @@ def get_multiclass_annotation():
 
 
 @app.route("/record_annotation", methods=['POST'])
+@logged_in
 def record_annotation():
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # extract sess vars
@@ -234,18 +286,6 @@ def record_annotation():
     else:
         logger.error("Not authorized for this project")
         return pievalIndex()
-
-
-################################################################
-# Functions
-################################################################
-def checkAuthZ(project_name, user_name):
-    user_proj_list = pv_dl.getProjectUsers()[user_name]
-    return True if project_name in user_proj_list else False
-
-
-def list_diff(l1, l2):
-    return list(set(l1) - set(l2))
 
 
 ################################################################

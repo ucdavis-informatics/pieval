@@ -61,7 +61,40 @@ vault variables are only important if DATASOURCE_TYPE is set to 'db'
 PIEVAL_SECRET_KEY = 'super_secret_key'
 VAULT_SERVER = 'https://vault-ri.ucdmc.ucdavis.edu:8200'
 VAULT_TOKEN = 'vault_token'
+
+####################
+# auth config
+####################
+# TESTING=True
+# DEBUG=True
+OIDC_CLIENT_SECRETS='instance/client_secrets.json'
+OIDC_ID_TOKEN_COOKIE_SECURE=False
+OIDC_REQUIRE_VERIFIED_EMAIL=False
+OIDC_USER_INFO_ENABLED=True
+OIDC_OPENID_REALM='cdi3'
+OIDC_SCOPES=['openid', 'email', 'profile']
+OIDC_INTROSPECTION_AUTH_METHOD='client_secret_post'
 ```
+
+**Notice the reference to instance/client_secrets.json**  
+This is another secrets file, also in the instance/ folder that must be created for each deployment.  It's structure is presented below:
+```json
+{
+    "web": {
+        "issuer": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3",
+        "auth_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/auth",
+        "client_id": "<Unique client id - defined in keycloak>",
+        "client_secret": "<unique key value here>",
+        "redirect_uris": [
+            "<url where app is hosted>"
+        ],
+        "userinfo_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/userinfo",
+        "token_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/token",
+        "token_introspection_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/token/introspect"
+    }
+}
+```
+Fill in all <> values before running the app
 
 ### Building the project
 Building the environment is a little different than using pipenv.
