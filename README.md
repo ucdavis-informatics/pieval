@@ -26,15 +26,21 @@ The persistence layer can be either filesystem (csv files) or and RDMBS database
 The file system approach is good for feature development but not appropriate for
 production deployments
 
+For dev deployments
+DATASOURCE_TYPE = 'file'
+DATASOURCE_LOCATION = 'example_database/'
+
 For prod deployments:
 - change DATASOURCE_TYPE = 'db'
 - change DATASOURCE_LOCATION to the vault path of your desired db
 Yes, this pretty much binds the app to UCD deployments but, vault goodness...
 '''
-DATASOURCE_TYPE = 'file'
+# DATASOURCE_TYPE = 'file'
+# DATASOURCE_LOCATION = 'example_database/'
 
-# value is either filesystem if DATASOURCE_TYPE == 'file' path or vault path if DATASOURCE_TYPE == 'db'
-DATASOURCE_LOCATION = 'example_database/'
+DATASOURCE_TYPE = 'db'
+# DATASOURCE_LOCATION = 'cdi3/db/cdi3sql01/dev'
+DATASOURCE_LOCATION = 'ri/db/rpreproc/pieval'
 
 # defaulted to pieval.
 # Change this is you want to place tables in a different schema
@@ -46,21 +52,18 @@ DB_SCHEMA = 'pieval'
 ####################
 '''
 Logged locally for development
-Change this to any absolute path on the hosting filesystem (ensure r/w privs) to log elsewhere
+Change this to any absolute path on the hosting filesystem (ensure r/w privs)
+to log elsewhere
 '''
 LOGFILE_LOCATION = 'example_log/flask_server.log'
 
 ####################
 # secret config
 ####################
-'''
-PIEVAL_SECRET_KEY is used to encrypt the session object to prevent user tampering.  This not 100pct foolproof but pretty good.  You can set this to anything.  Complicated key suggested.
-
-vault variables are only important if DATASOURCE_TYPE is set to 'db'
-'''
-PIEVAL_SECRET_KEY = 'super_secret_key'
 VAULT_SERVER = 'https://vault-ri.ucdmc.ucdavis.edu:8200'
-VAULT_TOKEN = 'vault_token'
+VAULT_TOKEN = '<vault_token>'
+SECRET_KEY = '<super_secret_key>'
+
 
 ####################
 # auth config
@@ -185,7 +188,6 @@ WSGIPythonHome /var/www/pieval/venv/bin/python
 WSGIPythonPath /var/www/pieval/venv/lib/python3.6/site-packages
 
 
-
 ### App Sessions
 This app makes heavy use of the session variable, a dictionary for holding stateful content.  This app manages these session variables
 1. logged_in - bool indicating whether logged in or not
@@ -198,8 +200,3 @@ This app makes heavy use of the session variable, a dictionary for holding state
 
 ### Stackoverflow resources used to accelerate this development
 https://stackoverflow.com/questions/7478366/create-dynamic-urls-in-flask-with-url-for
-
-
-## Outstanding Development work:
-1. Determine best auth strategy
-1. finish rdbms data loader class to allow for production use
