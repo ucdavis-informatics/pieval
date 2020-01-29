@@ -7,7 +7,6 @@ Data Loader for pieval
 import os
 import pandas as pd
 import sqlalchemy
-from sqlalchemy.sql import text
 import urllib
 import hvac
 
@@ -169,15 +168,15 @@ class DBDataLoader(object):
         pieval_secret = vaultClient.read(self.io_db_vault_path)
 
         print("creating sqlalchemy engine")
-        pievalDBType = pieval_secret.get('data').get('dbtype')
-        if pievalDBType == 'oracle':
+        self.pieval_db_type = pieval_secret.get('data').get('dbtype')
+        if self.pieval_db_type == 'oracle':
             if self.logger:
                 self.logger.info("Creating Oracle Database Engine")
             pievalUser = pieval_secret.get('data').get('username')
             pievalPass = pieval_secret.get('data').get('password')
             pievalURL = pieval_secret.get('data').get('url')
             pievalEngine = getOraDBEngine(pievalUser, pievalPass, pievalURL)
-        elif pievalDBType == 'mssql':
+        elif self.pieval_db_type == 'mssql':
             if self.logger:
                 self.logger.info("Creating MSSQL Database Engine")
             myUsername = pieval_secret.get('data').get('username')
@@ -282,11 +281,8 @@ class DBDataLoader(object):
     def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response):
         self.checkEngine()
         my_schema = self.schema_name
-        sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response) values(:rt, :pn, :un, :uip, :eid, :rsp)"
 
         if self.logger:
-            self.logger.debug(f"Save Annot SQL is {sql}")
-            self.logger.debug(f"Save Annot SQL is {type(sql)}")
             self.logger.debug(f"Response Time: {response_time}")
             self.logger.debug(f"Response Time Type: {type(response_time)}")
             self.logger.debug(f"Project Name: {project_name}")
@@ -301,25 +297,65 @@ class DBDataLoader(object):
             self.logger.debug(f"Response Type: {type(response)}")
         O_CON = self.io_db_engine.raw_connection()
         O_CURSOR = O_CON.cursor()
-        O_CURSOR.execute(sql,
-                         rt=response_time,
-                         pn=project_name,
-                         un=user_name,
-                         uip=user_ip,
-                         eid=example_id,
-                         rsp=response)
+
+        if self.pieval_db_type == 'oracle':
+            sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response) values(:rt, :pn, :un, :uip, :eid, :rsp)"
+            if self.logger:
+                self.logger.debug("Saving annotation to Oracle")
+                self.logger.debug(f"Save Annot SQL is {sql}")
+                self.logger.debug(f"Save Annot SQL is {type(sql)}")
+            O_CURSOR.execute(sql,
+                             rt=response_time,
+                             pn=project_name,
+                             un=user_name,
+                             uip=user_ip,
+                             eid=example_id,
+                             rsp=response)
+        elif self.pieval_db_type == 'mssql':
+            sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response) values(?, ?, ?, ?, ?, ?)"
+            if self.logger:
+                self.logger.debug("Saving annotation to MSSQL")
+                self.logger.debug(f"Save Annot SQL is {sql}")
+            O_CURSOR.execute(sql,
+                             response_time,
+                             project_name,
+                             user_name,
+                             user_ip,
+                             example_id,
+                             response)
+        else:
+            if self.logger:
+                self.logger.error("Unsupported DB type!")
         O_CON.commit()
         O_CURSOR.close()
 
     def deleteAnnot(self, project_name, user_name, example_id):
         self.checkEngine()
         my_schema = self.schema_name
-        sql = f"delete from {my_schema}.annotation_events where user_name = :un and project_name = :pn and example_id = :eid"
+
         O_CON = self.io_db_engine.raw_connection()
         O_CURSOR = O_CON.cursor()
-        O_CURSOR.execute(sql,
-                         un=user_name,
-                         pn=project_name,
-                         eid=example_id)
+        if self.pieval_db_type == 'oracle':
+            sql = f"delete from {my_schema}.annotation_events where user_name = :un and project_name = :pn and example_id = :eid"
+            if self.logger:
+                self.logger.debug("DELETING annotation from Oracle")
+                self.logger.debug(f"Delete Annot SQL is {sql}")
+            O_CURSOR.execute(sql,
+                             un=user_name,
+                             pn=project_name,
+                             eid=example_id)
+
+        elif self.pieval_db_type == 'mssql':
+            sql = f"delete from {my_schema}.annotation_events where user_name = ? and project_name = ? and example_id = ?"
+            if self.logger:
+                self.logger.debug("DELETING annotation from MSSQL")
+                self.logger.debug(f"Delete Annot SQL is {sql}")
+            O_CURSOR.execute(sql,
+                             user_name,
+                             project_name,
+                             example_id)
+        else:
+            if self.logger:
+                self.logger.error("Unsupported DB type!")
         O_CON.commit()
         O_CURSOR.close()
