@@ -1,10 +1,23 @@
 # pieval
-Author: Bill Riedl
+Author: Bill Riedl  
+Contributors: Joseph Cawood, Matt Renquist, Aaron Rosenburg, Jp Graff  
 Original Author Date: 2019-01-13   
 Current Status: Alpha  
 Cur Status Date: 2019-01-29
 
-Due to the limitations of the Shiny ecosystem, this is a port/improvement of [valR](https://gitlab.ri.ucdavis.edu/ri/pydatautils/ucd-ri-dataval/tree/dev-br/valR) from R into Python using [Flask](https://flask.palletsprojects.com/en/1.1.x/) as the web app framework.
+## Background
+pieval is the product of an idea, many work hours, a prototype in another language, and fairly extensive user testing.  And still growing.  The idea was a clever repurposing of common web app functionality seen in viral social apps like Tinder.  In these apps, users record their preferences with a quick swipe of the screen.  We wanted to bring that efficiency to data labeling efforts.  This work originated in a clinical setting in which data labelling has been prohibitively expensive, stunting the expanded use of machine learning.  Typically, data labelling efforts involves clinical experts reviewing data directly in an Electronic Medical Record, often taking minutes just to locate the data being reviewed, then entering their findings in a separate tool.  pieval removes all of this complexity, placing the data and the response capture in a lightweight, distraction free UI.  Admittedly this makes the annotation job set-up a bit more expensive.  However, that's concentrated as a one-time effort rather than forcing each annotator to pay the cost over and over.
+
+The tool began as an idea as a 5 person team grappled with how to accelerate a growing number of natural language processing techniques for the UC Davis Cancer center.  A few months after the idea was floated, Joseph Cawood tweaked some open source tooling, written in R and leveraging the rShiny ecosystem to provide a prototype we could put in front of users, [valR](https://gitlab.ri.ucdavis.edu/ri/pydatautils/ucd-ri-dataval/tree/dev-br/valR).  This prototype was invaluable in helping to shape the requirements of a production system.  After a few iterations in R/rShiny it became apparent that the framework was not up to the task.  The app was ported to Python using the Flask webapp framework in January 2020.
+
+### Tool Development Contributions
+Bill Riedl: Idea guy / Python dev
+Joseph Cawood: valR prototype author - lead to final product
+Matt Renquist: Keycloak auth strategy and deployment strategy using Gunicorn and Apache Proxies.
+Aaron Rosenburg: Primary clincal test user
+Jp Graff: Clincal test user
+
+___
 
 ## Technical Deets
 Python version: 3.6.x (3.6.9 for development)  
@@ -109,8 +122,9 @@ This is another secrets file, also in the instance/ folder that must be created 
 }
 ```
 
+---
 
-### Building the project
+### Cloning/Building the project
 Building the environment is a little different than using pipenv.
 Clone the repo.  Obtain clone URL from [HERE](https://gitlab.ri.ucdavis.edu/ri/pydatautils/pieval):
 ```sh
@@ -132,6 +146,8 @@ Install dependencies from requirements.txt
 ```sh
 pip install -r requirements.txt
 ```
+
+---
 
 ### Persistence architecture
 The pieval webapp is data driven.  The input and output data need to be accessible to the app while it's running.  Pieval can use either filesystem (csv) or a relational database (Oracle or MSSQL) to store and retrieve data.  It should be noted the filesystem option should only be used in development environments or for single user applications.  All other applications should plan to use a relational database.  The app has been tested against Oracle and MSSQL.  With very minor modifications, it will work against any SQL database of your choosing.  Please see example_database/README.md for more information about the data schema.
@@ -168,7 +184,9 @@ To have build_sql_database.py build the tables for you:
 python build_sql_database.py --keep_example_data yes
 ```
 
-### Running the app - locally
+---
+
+### Running the app locally
 **NOTE:  There are pre-reqs to running this app locally, without them it will not work.  They are:**
 1. keycloak - The keycloak service must be running, configured to accept this app as a client, and you must have network connectivity to it.
 
@@ -195,8 +213,8 @@ python run.py
   - Production - depends on deployment specific factors.  This will very likely be running
 
 
-### App Sessions
-This app makes heavy use of the session variable, a dictionary for holding stateful content.  This app manages these session variables
+#### App Sessions
+While the app is running, it makes heavy use of the session variable, a dictionary for holding stateful content.  This app manages these session variables
 1. logged_in - bool indicating whether logged in or not
 1. user_name - contains unique id for current user.  After shib'd, this entry will hold the REMOTE_USER variable
 1. cur_proj - unique name of current active project
@@ -205,6 +223,7 @@ This app makes heavy use of the session variable, a dictionary for holding state
 1. cur_example - a single integer, containing the current active example id in this users session
 1. prev_example - a single integer, containing the previous example annotated.  Used to allow for 'Doh!' functionality
 
+---
 
 ## Generating your own data for pieval
 Now that the app is up and running, it's time to add data meaningful to your project.  This is entirely your responsibility but, here is some helpful information to get your on your way.  We will assume you will be adding a new project to your pieval instance.  You need to complete 3 major steps to make this a reality.
