@@ -2,16 +2,16 @@
 <head>
   <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/pieval.css') }}">
   <link rel= "script" type= "text/javascript" href= "{{ url_for('static',filename='scripts/pieval.js') }}">
-  <meta name=”viewport” content=”width=device-width, initial-scale=1″>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Annotation Page for {{ one_example.project_name }}</title>
 </head>
 <body>
   <div class="topnav">
-    <a href = {{ url_for('pievalIndex') }} onmouseover="changeClass">Project Index</a>
+    <a href = {{ url_for('pieval.pievalIndex') }} onmouseover="changeClass">Project Index</a>
     {% if 'prev_example' in session.keys() %}
-    <a href = {{ url_for('annotate_example', doh='yes') }} onmouseover="changeClass">Doh!</a>
+    <a href = {{ url_for('pieval.annotate_example', doh='yes') }} onmouseover="changeClass">Doh!</a>
     {% endif %}
-    <a class="right" href= {{ url_for('logout') }} onmouseover="changeClass">Logout</a>
+    <a class="right" href= {{ url_for('pieval.logout') }} onmouseover="changeClass">Logout</a>
   </div>
 
   <p><b>Prompt: </b>{{ one_example.prompt }}</p>
@@ -19,7 +19,7 @@
   <div class="center_container">
     <hr>
     <p>{{ one_example.prompt }}</p>
-    <form action="{{ url_for('record_annotation') }}" method="post">
+    <form action="{{ url_for('pieval.record_annotation') }}" method="post">
       <div class="radio-toolbar">
         <input type="radio" id="radioAgree" name="response" value="agree">
         <label for="radioAgree">Agree</label>

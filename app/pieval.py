@@ -2,7 +2,9 @@
 index.py - main app module for pieval.  Will put user on home page
 '''
 # Imports
-from flask import url_for, render_template, session, request, redirect, flash
+from flask import (
+    Blueprint, url_for, render_template, session, request, redirect, flash
+)
 import pandas as pd
 from datetime import datetime
 from random import shuffle
@@ -13,12 +15,17 @@ from functools import wraps
 from flask_oidc import OpenIDConnect
 
 # siblings
-from app.data_loader import FileDataLoader, DBDataLoader
+from app.data_loader import (
+    FileDataLoader, DBDataLoader, InvalidVaultTokenError
+)
 
 # define the app
 from app import app
 # wrap app in auth
 oidc = OpenIDConnect(app)
+
+# set up Blueprint
+bp = Blueprint('pieval', __name__, url_prefix='/pieval')
 ##########################################################################
 # app environ
 # variables/dataloader/logger
@@ -60,12 +67,15 @@ def logged_in(f):
             return f(*args, **kwargs)
         else:
             flash('Please log in first.')
-            return redirect(url_for('login'))
+            return redirect(url_for('pieval.login'))
     return decorated_function
 
 
 def checkAuthZ(project_name, user_name):
-    user_proj_list = pv_dl.getProjectUsers()[user_name]
+    try:
+        user_proj_list = pv_dl.getProjectUsers()[user_name]
+    except InvalidVaultTokenError:
+        return render_template('bad_vault_token.html')
     return True if project_name in user_proj_list else False
 
 
@@ -76,8 +86,7 @@ def list_diff(l1, l2):
 ####################################################################
 # web events
 ####################################################################
-# @app.route('/login', methods=['GET', 'POST'])
-@app.route('/login')
+@bp.route('/login')
 @oidc.require_login
 def login():
     logger.debug(f"Entry to login func session: {session}")
@@ -86,12 +95,12 @@ def login():
         session['user_groups'] = oidc.user_getfield('groups')
         session['logged_in'] = True
         logger.debug(f"After OIDC param updates to session: {session}")
-        return redirect(url_for('pievalIndex'))
+        return redirect(url_for('pieval.pievalIndex'))
     else:
         return render_template('user_not_found.html')
 
 
-@app.route('/logout')
+@bp.route('/logout')
 def logout():
     if session.get('logged_in'):
         session.pop('logged_in')
@@ -105,16 +114,16 @@ def logout():
     # should be as simple as:
     # return redirect(url_for('pievalIndex'))
     # but due to flask-oidc bug it needs to be
-    return redirect(oidc.client_secrets.get('issuer')+'/protocol/openid-connect/logout?redirect_uri='+request.host_url+'/')
+    return redirect(oidc.client_secrets.get('issuer')+'/protocol/openid-connect/logout?redirect_uri='+request.host_url+'pieval')
 
 
-@app.route("/")
+@bp.route("/")
 @logged_in
 def pievalIndex():
     if not session.get('logged_in'):
         # if not logged in
         # return render_template('login.html')
-        redirect(url_for('login'))
+        redirect(url_for('pieval.login'))
     else:
         # user is logged in
         # user is returning to index, possibly after annotating
@@ -126,9 +135,12 @@ def pievalIndex():
         # log session
         logger.debug(f'Index session var is {session}')
         # get all projects for user
-        pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
-        data = pv_dl.getProjectData(return_as_dataframe=True)
-        prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
+        try:
+            pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
+            data = pv_dl.getProjectData(return_as_dataframe=True)
+            prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
+        except InvalidVaultTokenError:
+            return render_template('bad_vault_token.html')
 
         # compute project stats
         proj_example_counts = (data.groupby(['project_name'])
@@ -156,7 +168,7 @@ def pievalIndex():
         return render_template('index.html', projects=pieval_projects.to_dict(orient='records'))
 
 
-@app.route("/project/<project_name>")
+@bp.route("/project/<project_name>")
 @logged_in
 def project(project_name=None):
     if not project_name:
@@ -164,15 +176,18 @@ def project(project_name=None):
     else:
         if checkAuthZ(project_name, session['user_name']):
             # get project metadata
-            project_metadata = pv_dl.getProjectMetadata(project_name)
-            logger.debug(f'In project() function project metadata is: {project_metadata}')
-            # get all records for project and use it to set an order variable in the users session
-            project_data = pv_dl.getProjectData(project_name=project_name)
-            # logger.debug(f'In project() Project data for {project_name} is {project_data}')
-            proj_example_list = [x['example_id'] for x in project_data]
-            # check to see if they have annotated this project before.  If so, alter order object by removing already seen examples
-            prev_proj_annots_for_user = pv_dl.getPriorAnnotations(project_name=project_name, user_name=session['user_name'])
-            prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
+            try:
+                project_metadata = pv_dl.getProjectMetadata(project_name)
+                logger.debug(f'In project() function project metadata is: {project_metadata}')
+                # get all records for project and use it to set an order variable in the users session
+                project_data = pv_dl.getProjectData(project_name=project_name)
+                # logger.debug(f'In project() Project data for {project_name} is {project_data}')
+                proj_example_list = [x['example_id'] for x in project_data]
+                # check to see if they have annotated this project before.  If so, alter order object by removing already seen examples
+                prev_proj_annots_for_user = pv_dl.getPriorAnnotations(project_name=project_name, user_name=session['user_name'])
+                prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
+            except InvalidVaultTokenError:
+                return render_template('bad_vault_token.html')
 
             # compute remaining annot list
             remaining_examples = list_diff(proj_example_list, prior_example_list)
@@ -193,8 +208,8 @@ def project(project_name=None):
             return pievalIndex()
 
 
-@app.route("/annotate_example")
-@app.route("/annotate_example/<doh>")
+@bp.route("/annotate_example")
+@bp.route("/annotate_example/<doh>")
 @logged_in
 def annotate_example(doh='no'):
     if checkAuthZ(session['cur_proj'], session['user_name']):
@@ -203,9 +218,12 @@ def annotate_example(doh='no'):
                 # give user the previous annotation again
                 session['cur_example'] = session['prev_example']
                 session['example_order'] = session['example_order'] + [session['cur_example']]
-                one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
-                # remove existing annotation from database, before re-adding
-                pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
+                try:
+                    one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
+                    # remove existing annotation from database, before re-adding
+                    pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
+                except InvalidVaultTokenError:
+                    return render_template('bad_vault_token.html')
                 return render_template('annotation.html', one_example=one_example)
             else:
                 logger.error('No Previous example to doh!')
@@ -217,7 +235,10 @@ def annotate_example(doh='no'):
             example_idx = example_order[0]
             session['cur_example'] = example_idx
             logger.debug(f"In annotate_example() session: {session}")
-            one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
+            try:
+                one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
+            except InvalidVaultTokenError:
+                return render_template('bad_vault_token.html')
             # return annotation template with a single example
             return render_template('annotation.html', one_example=one_example)
         else:
@@ -228,17 +249,19 @@ def annotate_example(doh='no'):
         return pievalIndex()
 
 
-# @app.route("/annotate_mc_example")
 @logged_in
 def get_multiclass_annotation():
     logger.debug('Getting a multiclass example')
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # get current example
-        one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
-        logger.debug(f"In get_multiclass_annotation() one_example = {one_example}")
-        # get project classes
-        proj_classes = pv_dl.getProjectClasses(project_name=session['cur_proj'])
-        logger.debug(f"In get_multiclass_annotation() proj_classes = {proj_classes}")
+        try:
+            one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
+            logger.debug(f"In get_multiclass_annotation() one_example = {one_example}")
+            # get project classes
+            proj_classes = pv_dl.getProjectClasses(project_name=session['cur_proj'])
+            logger.debug(f"In get_multiclass_annotation() proj_classes = {proj_classes}")
+        except InvalidVaultTokenError:
+            return render_template('bad_vault_token.html')
         return render_template('annotation_mc.html',
                                 one_example=one_example,
                                 proj_classes=proj_classes,
@@ -248,7 +271,7 @@ def get_multiclass_annotation():
         return pievalIndex()
 
 
-@app.route("/record_annotation", methods=['POST'])
+@bp.route("/record_annotation", methods=['POST'])
 @logged_in
 def record_annotation():
     if checkAuthZ(session['cur_proj'], session['user_name']):
@@ -266,12 +289,15 @@ def record_annotation():
             return get_multiclass_annotation()
         else:
             # transact annotation event to persistence layer
-            pv_dl.saveAnnot(cur_time,
-                      cur_proj,
-                      user_name,
-                      user_ip,
-                      cur_example,
-                      response)
+            try:
+                pv_dl.saveAnnot(cur_time,
+                          cur_proj,
+                          user_name,
+                          user_ip,
+                          cur_example,
+                          response)
+            except InvalidVaultTokenError:
+                return render_template('bad_vault_token.html')
             # update session variable by removing this object from their list
             temp_example_order = session['example_order']
             temp_example_order.remove(session['cur_example'])

@@ -54,6 +54,11 @@ def getMSSQLEngine(inDriver, inServer, inDb, inUsername, inPassword):
 ################################################################
 # classes
 ################################################################
+class InvalidVaultTokenError(Exception):
+    """Raised when token doesn't authenticate to vault."""
+    pass
+
+
 class FileDataLoader(object):
     '''
     Data loader class for pieval, assuming csv file based backend.
@@ -163,9 +168,13 @@ class DBDataLoader(object):
         '''
         Creates a database engine
         '''
-        vaultClient = hvac.Client(url=self.vault_server,
-                                  token=self.vault_token)
-        pieval_secret = vaultClient.read(self.io_db_vault_path)
+        try:
+            vaultClient = hvac.Client(url=self.vault_server,
+                                      token=self.vault_token)
+            pieval_secret = vaultClient.read(self.io_db_vault_path)
+        except hvac.exceptions.Forbidden as e:
+            self.logger.error(e)
+            raise InvalidVaultTokenError(f"Vault token is invalid!")
 
         print("creating sqlalchemy engine")
         self.pieval_db_type = pieval_secret.get('data').get('dbtype')
