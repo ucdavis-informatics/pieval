@@ -246,7 +246,7 @@ Pieval is best deployed as a WSGI, aka whiskey, application.  Technologies invol
 
 Running the app:  
 ```sh
-pipenv run gunicorn -w 4 -b 0.0.0.0:5001 app:app
+pipenv run gunicorn -w 4 -b 127.0.0.1:5001 app:app
 ```
 
 
