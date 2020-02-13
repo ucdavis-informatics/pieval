@@ -25,7 +25,7 @@ from app import app
 oidc = OpenIDConnect(app)
 
 # set up Blueprint
-bp = Blueprint('pieval', __name__, url_prefix='/pieval')
+bp = Blueprint('pieval', __name__, url_prefix='/pieval', static_folder='static')
 ##########################################################################
 # app environ
 # variables/dataloader/logger
