@@ -2,6 +2,7 @@
 <head>
     <link rel= "stylesheet" type= "text/css" href= "{{ url_for('pieval.static',filename='styles/pieval.css') }}">
     <link rel= "script" type= "text/javascript" href= "{{ url_for('pieval.static',filename='scripts/pieval.js') }}">
+    <link rel="icon" href="{{ url_for('pieval.static',filename='images/pieval_Logo_favicon.png') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pieval Done</title>
 </head>
@@ -15,7 +16,7 @@
   </div>
   <div class="center_container">
     <h3>You finished this project!</h3>
-    <form method="GET" action={{ url_for('pievalIndex') }}>
+    <form method="GET" action={{ url_for('pieval.pievalIndex') }}>
       <div class="radio-submit">
       <input type="submit" value="Project List">
       </div>

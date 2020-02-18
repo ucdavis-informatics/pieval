@@ -68,6 +68,11 @@ table.center_table {
   color: white;
 }
 
+.topnav img {
+  float: left;
+  margin: 0px 10px;
+}
+
 
 /*
   Annotation Responses
