@@ -3,7 +3,7 @@
 <head>
   <link rel= "stylesheet" type= "text/css" href= "{{ url_for('pieval.static',filename='styles/pieval.css') }}">
   <link rel= "script" type= "text/javascript" href= "{{ url_for('pieval.static',filename='scripts/pieval.js') }}">
-  <link rel="icon" href="{{ url_for('pieval.static',filename='images/pieval_Logo_favicon.png') }}">
+  <link rel="icon" href="{{ url_for('pieval.static',filename='images/pieVal_Logo_favicon.png') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PieVal Home</title>
 </head>
@@ -12,10 +12,15 @@
     <a href = {{ url_for('pieval.pievalIndex') }} onmouseover="changeClass">Project Index</a>
     <a class="right" href= {{ url_for('pieval.logout') }} onmouseover="changeClass">Logout</a>
   </div>
+  <div id="welcome_container">
+    <div id="welcome_container_logo">
+
+    </div>
+  </div>
   <div class="center_container">
-    <h3 class="center_text">Welcome to PieVal</h3>
-    <h5 class="center_text">Just what the doctor ordered if your disease is unlabeled data!</h5>
-    <h4 class="center_text">{{ session['user_name']|title }}'s projects</h4>
+    <img src="{{ url_for('pieval.static',filename='images/pieVal_Logo_medium.png') }}"></img><h3 class="inline_header">Welcome to PieVal</h3><img src="{{ url_for('pieval.static',filename='images/pieVal_Logo_medium.png') }}"></img>
+    <h5>Just what the doctor ordered if your disease is unlabeled data!</h5>
+    <h4>{{ session['user_name']|title }}'s projects</h4>
     <table class="center_table">
       <tr>
         <th>Project</th>

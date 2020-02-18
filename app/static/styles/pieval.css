@@ -121,3 +121,8 @@ table.center_table {
   cursor: pointer;
   align: center;
 }
+
+
+h3.inline_header{
+  display: inline;
+}
