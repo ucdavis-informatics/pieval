@@ -1,10 +1,10 @@
 <html>
 <head>
   <link rel= "stylesheet" type= "text/css" href= "{{ url_for('pieval.static',filename='styles/pieval.css') }}">
-  <link rel= "script" type= "text/javascript" href= "{{ url_for('pieval.static',filename='scripts/pieval.js') }}">
   <link rel="icon" href="{{ url_for('pieval.static',filename='images/pieVal_Logo_favicon.png') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Annotation Page for {{ one_example.project_name }}</title>
+  <script rel= "script" type= "text/javascript" src= "{{ url_for('pieval.static',filename='scripts/pieval.js') }}"></script>
   <script type="text/javascript">
     var mc_class_list = {{ proj_class_data|safe }}
     function validateMCEntry(){
@@ -27,7 +27,9 @@
 
   <p><b>Prompt: </b>{{ one_example.prompt }}</p>
   <p><b>Data: </b>{{ one_example.data }}</p>
+  <p id="full_report_data" style="display: none"><b>Data_ext: </b>{{ one_example.data_ext }}</p>
   <div class="center_container">
+    <a onclick="toggleHideUnhideFullReportData('full_report_data')" href="#">Show/Hide More Context</a>
     <hr>
     <p>{{ one_example.prompt }}</p>
     <form action="{{ url_for('pieval.record_annotation') }}" method="post">

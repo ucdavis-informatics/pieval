@@ -139,10 +139,17 @@ def pievalIndex():
             pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
             data = pv_dl.getProjectData(return_as_dataframe=True)
             prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
-        except InvalidVaultTokenError:
+        except InvalidVaultTokenError as e:
+            logger.error(f"Caught bad token error{e}")
             return render_template('bad_vault_token.html')
+        except KeyError as e:
+            logger.error(f"Caught missing person key error{e}")
+            return render_template('user_not_found.html')
+        except Exception as e:
+            logger.error(f"Caught unidentified error{e}")
+            return render_template('error.html')
 
-        # compute project stats
+        # Assuming no exceptions: compute project stats
         proj_example_counts = (data.groupby(['project_name'])
                                    .size()
                                    .to_frame()

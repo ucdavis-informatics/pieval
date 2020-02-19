@@ -11,8 +11,8 @@ pieval is the product of an idea, many work hours, a prototype in another langua
 pieval began as an idea as a 5 person team grappled with how to accelerate a growing number of natural language processing techniques for the UC Davis Cancer center.  A few months after the idea was floated, Joseph Cawood tweaked some open source tooling, written in R, and leveraging the rShiny ecosystem to provide a prototype we could put in front of users([valR](https://gitlab.ri.ucdavis.edu/ri/pydatautils/ucd-ri-dataval/tree/dev-br/valR)).  This prototype was invaluable in helping to shape the requirements of a production system.  After a few iterations in R/rShiny it became apparent that the framework was not up to the task.  The app was ported to Python using the Flask webapp framework in January 2020.
 
 ### Tool Development Contributions
-Bill Riedl: Idea guy / Python dev
-Joseph Cawood: valR prototype author - lead to final product
+Bill Riedl: Idea guy / Lead dev
+Joseph Cawood: valR prototype author
 Matt Renquist: Keycloak auth strategy and deployment strategy using Gunicorn and Apache Proxies.
 Aaron Rosenburg: Primary clincal test user
 Jp Graff: Clincal test user
@@ -24,7 +24,7 @@ Python version: 3.6.x (3.6.9 for development)
 Venv manager: python3 -m venv  
 Package manager: pip  
 Auth: Keycloak  
-Persistence Architecutre: filesystem(dev only) or RDBMS (tested on ora or mssql)
+Persistence Architecture: filesystem(dev only) or RDBMS (tested on ora or mssql)
 Secrets Management: Vault.  With modification, the app could be convinced to obtain all secrets from config.py (see below) if Vault is not available to you.
 
 **NOTE:** using standard pip/virtualenv instead of pipenv due to some users complaining about flask/pipenv interoperability.  The virtual environment is 'self-contained', meaning it lives at pieval/venv/.  NOTE the the venv/ folder has been gitignored.  It will not be checked into the repo and needs to be built wherever this is deployed.  See building the project below.
@@ -34,6 +34,8 @@ All App config is housed in the instance/ directory.  There are 2 configuration 
 1. config.py - contains app configuration
 1. client_secrets.json - referenced in config.py, contains keycloak auth configuration
 These files are NOT checked into the git repo because they may contain secrets.  These files are a pre-requisite to a working example.  Be sure to create them using these examples as reference:
+
+**NOTE:**  As you create these files be EXTREMELY careful about which environment you are connecting to, espeically if using a database as the persistence architecture.  This repo contains code that can overwrite an exisiting database schema.  If you trigger this during development against a non-development database you can lose data!
 
 ```py
 #################

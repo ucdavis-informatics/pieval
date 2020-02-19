@@ -28,8 +28,9 @@ project_data_metadata = {
     'project_name': types.NVARCHAR(100),
     'example_id': types.DECIMAL(precision=3, scale=0),
     'source_id': types.NVARCHAR(50),
-    'data': types.NVARCHAR(2000),
-    'prompt': types.NVARCHAR(500),
+    'data': types.NVARCHAR(None),
+    'data_ext': types.NVARCHAR(None),
+    'prompt': types.NVARCHAR(1000),
 }
 
 
