@@ -22,12 +22,10 @@ ___
 ## Technical Deets
 Python version: 3.6.x (3.6.9 for development)  
 Venv manager: python3 -m venv  
-Package manager: pip  
+Package manager: pipenv  
 Auth: Keycloak  
 Persistence Architecture: filesystem(dev only) or RDBMS (tested on ora or mssql)
 Secrets Management: Vault.  With modification, the app could be convinced to obtain all secrets from config.py (see below) if Vault is not available to you.
-
-**NOTE:** using standard pip/virtualenv instead of pipenv due to some users complaining about flask/pipenv interoperability.  The virtual environment is 'self-contained', meaning it lives at pieval/venv/.  NOTE the the venv/ folder has been gitignored.  It will not be checked into the repo and needs to be built wherever this is deployed.  See building the project below.
 
 ### App Config
 All App config is housed in the instance/ directory.  There are 2 configuration files that must be present:
@@ -134,19 +132,9 @@ git clone <git url>
 cd ucd-ri-pieval
 ```
 
-Create virtualenv
+Create pipenv
 ```sh
-python3 -m venv venv
-```
-
-Activate virtualenv
-```sh
-source venv/bin/activate
-```
-
-Install dependencies from requirements.txt
-```sh
-pip install -r requirements.txt
+pipenv --python 3.6.9 install
 ```
 
 ---
@@ -183,12 +171,12 @@ To have build_sql_database.py build the tables for you:
 1. From within an activated pieval venv run:
 ```sh
 # flip yes to no in the keep_example_data argument if you want an empty database
-python build_sql_database.py --keep_example_data yes
+pipenv run python build_sql_database.py --keep_example_data yes
 ```
 
 ---
 
-### Running the app locally
+### Running the app
 **NOTE:  There are pre-reqs to running this app locally, without them it will not work.  They are:**
 1. keycloak - The keycloak service must be running, configured to accept this app as a client, and you must have network connectivity to it.
 
@@ -197,22 +185,30 @@ Assuming you meet the above requirements, you can run the app locally! It is bes
 If you want to run the app against a database locally, it adds another pre-req.  You must have a database you control and previously built the pieval schema.  If you plan to use this code out of the box, you must also be running Vault and update instance/config.py with the correct vault information.  In the absence of vault, you must modify instance/config.py as well as some of the source code to instead pull database secrets/parameters from the config file.
 
 
-1. Activate the venv (don't redo if already activated from building the app)
+- Activate the venv (don't redo if already activated from building the app)  
+
 ```sh
-source venv/bin/activate
-```
-1. Set FLASK_ENV=development.  This activates helpful actions during the development process such as auto-reloading on file save and debug logging messages.  This is only done when running locally.  Running in development mode is not appropriate for production deployments.
-```sh
-export FLASK_ENV=development
-```
-1. Run App
-```sh
-python run.py
+pipenv shell
 ```
 
-1. Access app by URL - by default app launches on localhost:5000
-  - Local development [localhost:5000](http://localhost:5000)
-  - Production - depends on deployment specific factors.  This will very likely be running
+- Run App
+
+
+```sh
+# Using development server with auto-reload
+python run.py
+```
+-OR-
+
+```sh
+# Run App using gunicorn that more closely matches the deployment environment
+gunicorn -w 4 -b 127.0.0.1:5001 app:app
+```
+
+- Access app by URL - by default app launches on localhost:5001
+  - Local development [localhost:5001](http://localhost:5001)
+  - Production - depends on deployment specific factors
+
 
 
 #### App Sessions
@@ -235,20 +231,29 @@ Now that the app is up and running, it's time to add data meaningful to your pro
 
 Of these, #3 is the heaviest.  Assuming you can get your data into csv file format with these columns:
 ```py
-pieval_cols=['project_name','example_id','source_id','data','prompt']
+pieval_cols=['project_name','example_id','source_id','data','data_ext','prompt']
 ```
 described in example_database/README.md for the project_data table, you can either append your data to the project_data.csv file or the project_data database table, depending on whether or not you are using filesystem or RDBMS as your persistence architecture.
 
 
-### Deploying/Running the app on a server - wsgi deployment
-**Deployment Details in progress**  
-Pieval is best deployed as a WSGI, aka whiskey, application.  Technologies involved:
+### Deploying/Running the app on a server
+Pieval is deployed on gunicorn python app server proxied by Apache.  In this deployment method, pieval must be running on gunicorn binding a localhost port/sub-url.  Apache must be configured to accept web requests and proxy them to the application.  Apache also enforces 'https'.
 1. Gunicorn - wsgi app container
 1. Apache - web server wich accepts web requests and proxies to Gunicorn
 
 Running the app:  
 ```sh
 pipenv run gunicorn -w 4 -b 127.0.0.1:5001 app:app
+```
+
+Basic puppet config to run app at '/pieval':
+```yaml
+proxy_pass:
+  -
+    path: '/pieval'
+    url: 'http://localhost:5001/pieval'
+    reverse_urls:
+      - 'http://localhost:5001/pieval'
 ```
 
 

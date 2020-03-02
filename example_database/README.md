@@ -20,6 +20,7 @@ user_name - unique user_name
 user_ip - IP address from which the response was submitted
 example_id - The specific example within the project_name to which the response applies
 response - the response value
+context_viewed - Set to 'yes' if the annotator looked at the expanded context, i.e. non-truncated, data when making their decision.  Default 'no'
 
 ### project_classes
 Contains entries for class values in multiclass projects.  If the project has 13 classes, there will be 13 rows in this table
@@ -34,7 +35,8 @@ Unique_key: project_name, example_id
 project_name - unique project name
 example_id - the unique_id of this example
 source_id - the unique source_id of this example.  Allows us to tie annotations back to original data
-data - the data presented to the user for review
+data - the data presented to the user for review, commonly truncated from source (aka enriched with the content specific to the annotation task)
+data_ext - the data presented to the user for review, the full source of the original report from which the truncated/enriched content was selected
 prompt - The prompt containing the assertion the user either agrees or disagrees with
 
 #### project_users

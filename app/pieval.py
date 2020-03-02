@@ -257,7 +257,7 @@ def annotate_example(doh='no'):
 
 
 @logged_in
-def get_multiclass_annotation():
+def get_multiclass_annotation(context_viewed='no'):
     logger.debug('Getting a multiclass example')
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # get current example
@@ -270,9 +270,10 @@ def get_multiclass_annotation():
         except InvalidVaultTokenError:
             return render_template('bad_vault_token.html')
         return render_template('annotation_mc.html',
-                                one_example=one_example,
-                                proj_classes=proj_classes,
-                                proj_class_data = proj_classes)
+                               one_example=one_example,
+                               proj_classes=proj_classes,
+                               proj_class_data=proj_classes,
+                               context_viewed=context_viewed)
     else:
         logger.error("Not authorized for this project")
         return pievalIndex()
@@ -288,21 +289,24 @@ def record_annotation():
         project_mode = session['project_mode']
         cur_example = session['cur_example']
         response = request.form['response']
+        context_viewed = request.form['context_viewed']
         user_ip = request.remote_addr
         cur_time = datetime.now().replace(microsecond=0)
 
         if project_mode == 'multiclass' and response == 'disagree':
             # get class specification
-            return get_multiclass_annotation()
+            return get_multiclass_annotation(context_viewed=context_viewed)
         else:
             # transact annotation event to persistence layer
             try:
+                # record annotation
                 pv_dl.saveAnnot(cur_time,
                           cur_proj,
                           user_name,
                           user_ip,
                           cur_example,
-                          response)
+                          response,
+                          context_viewed)
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token.html')
             # update session variable by removing this object from their list

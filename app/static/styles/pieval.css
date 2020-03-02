@@ -126,3 +126,11 @@ table.center_table {
 h3.inline_header{
   display: inline;
 }
+
+
+/*
+Hide the context viewed input
+*/
+.hidden-input{
+  display: none;
+}

@@ -40,6 +40,9 @@
           <option value="{{ class }}">{{ class }}</option>
         {% endfor %}
       </datalist>
+      <div class="hidden-input">
+        <input type="text" id="context_viewed" name="context_viewed" value="{{ context_viewed }}"></input>
+      </div>
       <div class="radio-submit">
         <input type="submit" onclick="return validateMCEntry()">
       </div>

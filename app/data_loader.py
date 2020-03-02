@@ -134,13 +134,14 @@ class FileDataLoader(object):
         else:
             pass
 
-    def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response):
+    def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response, context_viewed):
         new_row = pd.DataFrame(data={'response_time': response_time,
                                      'project_name': project_name,
                                      'user_name': user_name,
                                      'user_ip': user_ip,
                                      'example_id': example_id,
-                                     'response': response}, index=[0])
+                                     'response': response,
+                                     'context_viewed': context_viewed}, index=[0])
 
         prev_data = pd.read_csv(os.path.join(self.database_dir, 'annotation_events.csv'))
         new_data = prev_data.append(new_row, ignore_index=True, sort=False).reset_index(drop=True)
@@ -287,7 +288,7 @@ class DBDataLoader(object):
                 data_df = data_df.loc[((data_df['user_name'] == user_name) & (data_df['project_name'] == project_name))]
                 return data_df if return_as_dataframe else data_df.to_dict(orient='records')
 
-    def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response):
+    def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response, context_viewed):
         self.checkEngine()
         my_schema = self.schema_name
 
@@ -304,11 +305,13 @@ class DBDataLoader(object):
             self.logger.debug(f"Example ID Type: {type(example_id)}")
             self.logger.debug(f"Response: {response}")
             self.logger.debug(f"Response Type: {type(response)}")
+            self.logger.debug(f"Context Viewed: {context_viewed}")
+            self.logger.debug(f"Context Viewed Type: {type(context_viewed)}")
         O_CON = self.io_db_engine.raw_connection()
         O_CURSOR = O_CON.cursor()
 
         if self.pieval_db_type == 'oracle':
-            sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response) values(:rt, :pn, :un, :uip, :eid, :rsp)"
+            sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response, context_viewed) values(:rt, :pn, :un, :uip, :eid, :rsp, :cv)"
             if self.logger:
                 self.logger.debug("Saving annotation to Oracle")
                 self.logger.debug(f"Save Annot SQL is {sql}")
@@ -319,9 +322,10 @@ class DBDataLoader(object):
                              un=user_name,
                              uip=user_ip,
                              eid=example_id,
-                             rsp=response)
+                             rsp=response,
+                             cv=context_viewed)
         elif self.pieval_db_type == 'mssql':
-            sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response) values(?, ?, ?, ?, ?, ?)"
+            sql = f"insert into {my_schema}.annotation_events (response_time, project_name, user_name, user_ip, example_id, response, context_viewed) values(?, ?, ?, ?, ?, ?, ?)"
             if self.logger:
                 self.logger.debug("Saving annotation to MSSQL")
                 self.logger.debug(f"Save Annot SQL is {sql}")
@@ -331,7 +335,8 @@ class DBDataLoader(object):
                              user_name,
                              user_ip,
                              example_id,
-                             response)
+                             response,
+                             context_viewed)
         else:
             if self.logger:
                 self.logger.error("Unsupported DB type!")

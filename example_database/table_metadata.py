@@ -14,7 +14,8 @@ annotation_events_metadata = {
     'user_name': types.NVARCHAR(100),
     'user_ip': types.NVARCHAR(100),
     'example_id': types.DECIMAL(precision=3, scale=0),
-    'response': types.NVARCHAR(500)
+    'response': types.NVARCHAR(500),
+    'context_viewed': types.NVARCHAR(50)
 }
 
 
