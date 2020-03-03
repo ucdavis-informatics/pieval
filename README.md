@@ -53,12 +53,11 @@ For prod deployments:
 - change DATASOURCE_LOCATION to the vault path of your desired db
 Yes, this pretty much binds the app to UCD deployments but, vault goodness...
 '''
-# DATASOURCE_TYPE = 'file'
-# DATASOURCE_LOCATION = 'example_database/'
+DATASOURCE_TYPE = 'file'
+DATASOURCE_LOCATION = 'example_database/'
 
-DATASOURCE_TYPE = 'db'
+# DATASOURCE_TYPE = 'db'
 # DATASOURCE_LOCATION = 'cdi3/db/cdi3sql01/dev'
-DATASOURCE_LOCATION = 'ri/db/rpreproc/pieval'
 
 # defaulted to pieval.
 # Change this is you want to place tables in a different schema

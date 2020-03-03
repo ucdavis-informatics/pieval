@@ -46,15 +46,3 @@ user_name - user_name
 #### projects
 name - unique project name
 description - Short description of the project to be displayed to users
-
-
-### Helper SQL
-```SQL
-select * from annotation_events;
-
-select * from project_data;
-
-select * from project_users;
-
-select * from projects;
-```
