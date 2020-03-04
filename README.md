@@ -37,6 +37,13 @@ These files are NOT checked into the git repo because they may contain secrets. 
 
 ```py
 #################
+# App config
+# this will change the default prefix added by the blueprint
+# For this app, common sense choices are either '/' or '/pieval'
+#################
+BLUEPRINT_URL_PREFIX = '/'
+
+#################
 # data source config
 #################
 '''
