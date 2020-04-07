@@ -15,18 +15,14 @@ rdbms specific python package
 # imports
 #########################################################################
 import argparse
-import sqlalchemy
-import urllib
 import os
 import hvac
 import pandas as pd
 
-# db con packages
-import pyodbc
-import cx_Oracle
-
 import instance.config as config
 import example_database.table_metadata as metadata
+
+from db_utils import getMSSQLEngine, getOraDBEngine
 
 #########################################################################
 # globals
@@ -45,43 +41,6 @@ parser.add_argument('--keep_example_data',
 #########################################################################
 # functions
 #########################################################################
-def getOraDBEngine(inUsername, inPassword, inURL):
-    '''
-    Returns sqlalchemy database engine, specific to database type
-    Oracle and MSSQL only current supported platforms
-    '''
-    ORAEngineConString = 'oracle+cx_oracle://{}:{}@{}'.format(inUsername,
-                                                              inPassword,
-                                                              inURL)
-    ORAEngine = sqlalchemy.create_engine(ORAEngineConString, pool_size=100)
-
-    # update NLS format for this session
-    O_CON = ORAEngine.raw_connection()
-    O_CURSOR = O_CON.cursor()
-    O_CURSOR.execute("ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'")
-
-    return ORAEngine
-
-
-def getMSSQLEngine(inDriver, inServer, inDb, inUsername, inPassword):
-    # Setting up connection string using params:
-    # Adding PORT seems to make no difference
-    # 'PORT=' + myPort + ';' \
-    conString = 'DRIVER=' + inDriver + ';' \
-            'SERVER=' + inServer + ';' \
-            'DATABASE=' + inDb + ';' \
-            'UID=' + inUsername + ';' \
-            'PWD=' + inPassword + ';' \
-            'Trusted_Connection=No;'
-
-    # URL encode the connection string
-    conString = urllib.parse.quote_plus(conString)
-
-    # Create the connection engine object
-    MSSQLEngine = sqlalchemy.create_engine('mssql+pyodbc:///?odbc_connect=%s' % conString)
-    return MSSQLEngine
-
-
 def buildPievalDatabase(pievalEngine, destination_schema, example_data_dir, keep_example_data):
     for table, table_dict in metadata.table_dict.items():
         print(f"Building table {table}")

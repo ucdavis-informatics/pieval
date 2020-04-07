@@ -241,6 +241,27 @@ pieval_cols=['project_name','example_id','source_id','data','data_ext','prompt']
 ```
 described in example_database/README.md for the project_data table, you can either append your data to the project_data.csv file or the project_data database table, depending on whether or not you are using filesystem or RDBMS as your persistence architecture.
 
+### Using create_project.py
+Assuming your using a backing database, this script will help you create a new project.  This is intened more for production applications.  In local development, editing the csv files in example database is so easy we won't build a script to manage them.
+
+You must first create a table in the pieval_stage schema, with the same columns as pieval.project_data, containing the data for the new project.  If your project is a multi-class project, then you must also create a table containing the project classes in the pieval_stage schema.  The you can run the create_project.py script to insert the new data into all the necessary tables.  It is a CLI script with a pretty well document api available here:
+```shell script
+# assumes pipenv is activated
+$ python create_project.py --help
+```
+A specific example here which creates a project from the staging table:  
+  pieval_stage.aml_bm_blast_cycle1  
+  with 2 users test1 and 2  
+  with project description test project description
+  with project mode binary
+  
+```shell script
+# assumes pipenv is activated
+$ python create_project.py -dt aml_bm_blast_cycle1 -u test1 -u test2 -pd "test project description" -pm binary -ct aml_bm_classes
+```
+
+### Using delete_project.py
+
 
 ### Deploying/Running the app on a server
 Pieval is deployed on gunicorn python app server proxied by Apache.  In this deployment method, pieval must be running on gunicorn binding a localhost port/sub-url.  Apache must be configured to accept web requests and proxy them to the application.  Apache also enforces 'https'.
