@@ -67,3 +67,19 @@ def get_db_connection(config):
     else:
         print("Current datasource type is defined as file...no database to build!")
         return None
+
+def create_backup(pieval_engine, metadata):
+    con = pieval_engine.raw_connection()
+    curs = con.cursor()
+    for table,_ in metadata.table_dict.items():
+        try:
+            drop_sql = """drop table pieval_backup.{}""".format(table)
+        except Exception as e:
+            print("There was an error dropping the table!!")
+            print(e)
+        ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
+        curs.execute(drop_sql)
+        curs.execute(ins_sql)
+    curs.commit()
+    curs.close()
+    con.close()

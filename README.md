@@ -1,6 +1,7 @@
 # pieval
+![pieval logo](app/static/images/pieVal_Logo_medium.png)  
 Author: Bill Riedl  
-Contributors: Joseph Cawood, Matt Renquist, Aaron Rosenburg, Jp Graff  
+Contributors: Joseph Cawood, Matt Renquist, Aaron Rosenburg, Jp Graff, Cy Huynh  
 Original Author Date: 2019-01-13   
 Current Status: Alpha  
 Cur Status Date: 2019-01-29
@@ -10,12 +11,13 @@ pieval is the product of an idea, many work hours, a prototype in another langua
 
 pieval began as an idea as a 5 person team grappled with how to accelerate a growing number of natural language processing techniques for the UC Davis Cancer center.  A few months after the idea was floated, Joseph Cawood tweaked some open source tooling, written in R, and leveraging the rShiny ecosystem to provide a prototype we could put in front of users([valR](https://gitlab.ri.ucdavis.edu/ri/pydatautils/ucd-ri-dataval/tree/dev-br/valR)).  This prototype was invaluable in helping to shape the requirements of a production system.  After a few iterations in R/rShiny it became apparent that the framework was not up to the task.  The app was ported to Python using the Flask webapp framework in January 2020.
 
-### Tool Development Contributions
-Bill Riedl: Idea guy / Lead dev
-Joseph Cawood: valR prototype author
-Matt Renquist: Keycloak auth strategy and deployment strategy using Gunicorn and Apache Proxies.
-Aaron Rosenburg: Primary clincal test user
-Jp Graff: Clincal test user
+### Contributors
+Bill Riedl: Idea guy / Lead dev  
+Joseph Cawood: valR prototype author  
+Matt Renquist: Keycloak auth strategy and deployment strategy using Gunicorn and Apache Proxies.  
+Aaron Rosenburg: Primary clincal test user  
+Jp Graff: Clincal test user  
+Cy Huynh: Logo Developer  
 
 ___
 
@@ -182,6 +184,54 @@ pipenv run python build_sql_database.py --keep_example_data yes
 
 ---
 
+## Generating your own data for pieval
+Now that the app is up and running, it's time to add data meaningful to your project.  This is entirely your responsibility but, here is some helpful information to get your on your way.  We will assume you will be adding a new project to your pieval instance.  You need to complete 3 major steps to make this a reality.
+1. Define a project - Add an entry to projects.csv OR the projects table in your preferred database, filling out all columns
+1. Add Users to the project - Add entries to project_users.csv OR the projec_users table in your preferred database
+1. Add data to project_data
+
+Of these, #3 is the heaviest.  Assuming you can get your data into csv file format with these columns:
+```py
+pieval_cols=['project_name','example_id','source_id','data','data_ext','prompt']
+```
+described in example_database/README.md for the project_data table, you can either append your data to the project_data.csv file or the project_data database table, depending on whether or not you are using filesystem or RDBMS as your persistence architecture.
+
+### Using create_project.py
+Assuming your using a backing database, this script will help you create a new project.  This is intened more for production applications.  In local development, editing the csv files in example database is so easy we won't build a script to manage them.
+
+You must first create a table in the pieval_stage schema, with the same columns as pieval.project_data, containing the data for the new project.  If your project is a multi-class project, then you must also create a table containing the project classes in the pieval_stage schema.  The you can run the create_project.py script to insert the new data into all the necessary tables.  It is a CLI script with a pretty well document api available here:
+```shell script
+# assumes pipenv is activated
+$ python create_project.py --help
+```
+A specific example here which creates a project from the staging table:  
+  pieval_stage.aml_bm_blast_cycle1  
+  with 2 users test1 and 2  
+  with project description test project description
+  with project mode binary
+  
+```shell script
+# assumes pipenv is activated
+$ python create_project.py -dt aml_bm_blast_cycle1 -u awriedl -u jmcawood -pd "test project description" -pm binary
+```
+
+### Using delete_project.py
+Assuming your using a backing database, this script will help you delete a project.  This is intened more for production applications.  In local development, editing the csv files in example database is so easy we won't build a script to manage them.
+
+Pass the script a project_name and it will remove all data for that project, AFTER creating a full backup in the pieval_backup schema.  It is up to you to use this tool responsibly.  Please ensure you have captured the data you want BEFORE removing a project.  The backup does exist, but you should not rely on it!  This is implemented as a CLI script.  The API can be examined here:
+```shell script
+# assumes pipenv is activated
+$ python delete_project.py --help
+```
+
+A specific example:  
+```shell script
+# assumes pipenv is activated
+$ python delete_project.py -pn aml_bone_marrow_results
+```
+
+---
+
 ### Running the app
 **NOTE:  There are pre-reqs to running this app locally, without them it will not work.  They are:**
 1. keycloak - The keycloak service must be running, configured to accept this app as a client, and you must have network connectivity to it.
@@ -229,47 +279,15 @@ While the app is running, it makes heavy use of the session variable, a dictiona
 
 ---
 
-## Generating your own data for pieval
-Now that the app is up and running, it's time to add data meaningful to your project.  This is entirely your responsibility but, here is some helpful information to get your on your way.  We will assume you will be adding a new project to your pieval instance.  You need to complete 3 major steps to make this a reality.
-1. Define a project - Add an entry to projects.csv OR the projects table in your preferred database, filling out all columns
-1. Add Users to the project - Add entries to project_users.csv OR the projec_users table in your preferred database
-1. Add data to project_data
-
-Of these, #3 is the heaviest.  Assuming you can get your data into csv file format with these columns:
-```py
-pieval_cols=['project_name','example_id','source_id','data','data_ext','prompt']
-```
-described in example_database/README.md for the project_data table, you can either append your data to the project_data.csv file or the project_data database table, depending on whether or not you are using filesystem or RDBMS as your persistence architecture.
-
-### Using create_project.py
-Assuming your using a backing database, this script will help you create a new project.  This is intened more for production applications.  In local development, editing the csv files in example database is so easy we won't build a script to manage them.
-
-You must first create a table in the pieval_stage schema, with the same columns as pieval.project_data, containing the data for the new project.  If your project is a multi-class project, then you must also create a table containing the project classes in the pieval_stage schema.  The you can run the create_project.py script to insert the new data into all the necessary tables.  It is a CLI script with a pretty well document api available here:
-```shell script
-# assumes pipenv is activated
-$ python create_project.py --help
-```
-A specific example here which creates a project from the staging table:  
-  pieval_stage.aml_bm_blast_cycle1  
-  with 2 users test1 and 2  
-  with project description test project description
-  with project mode binary
-  
-```shell script
-# assumes pipenv is activated
-$ python create_project.py -dt aml_bm_blast_cycle1 -u test1 -u test2 -pd "test project description" -pm binary -ct aml_bm_classes
-```
-
-### Using delete_project.py
-
-
 ### Deploying/Running the app on a server
 Pieval is deployed on gunicorn python app server proxied by Apache.  In this deployment method, pieval must be running on gunicorn binding a localhost port/sub-url.  Apache must be configured to accept web requests and proxy them to the application.  Apache also enforces 'https'.
-1. Gunicorn - wsgi app container
+1. Gunicorn - app container
 1. Apache - web server wich accepts web requests and proxies to Gunicorn
 
 Running the app:  
 ```sh
+# Note only binding 127.0.0.1 - makes app localhost only and ensures the only external access path
+# will be through apache, which enforces https
 pipenv run gunicorn -w 4 -b 127.0.0.1:5001 app:app
 ```
 

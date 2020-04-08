@@ -12,7 +12,7 @@ import sys
 # siblings
 import instance.config as config
 import example_database.table_metadata as metadata
-from db_utils import get_db_connection
+from db_utils import get_db_connection, create_backup
 
 
 ##################################################
@@ -38,35 +38,49 @@ from db_utils import get_db_connection
               multiple=True,
               help="One or more users: example create_project.py -u user1 -u user2")
 def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
-    print("Getting pieval database connection (based on parameters in instance/config)")
+    #########################
+    # set up
+    #########################
+    print(f"Getting pieval database connection (based on parameters in instance/config) to {config.DATASOURCE_LOCATION}")
     pieval_engine = get_db_connection(config)
     print("Creating Backup in pieval_backup schema in case things go sideways")
-    create_backup(pieval_engine)
+    create_backup(pieval_engine, metadata)
 
     print("Loading staged data into memory")
-    stage_data = get_project_staging_data(pieval_engine, 'aml_bm_blast_cycle1')
+    stage_data = get_project_staging_data(pieval_engine, data_table)
     project_name = stage_data['project_name'].unique()[0]
+    print("-"*10,project_name,"-"*10)
 
     if proj_mode=='multiclass':
         classes = get_class_data(pieval_engine,classes_table)
 
-    print("-"*10,"Project Overview","-"*10)
-    print(f"Project name will be {project_name}")
-    print(f"Project description: {proj_desc}")
-    print(f"Project Mode is: {proj_mode}")
-    print(f"User list: {user_list}")
-    print(f"Data will be loaded from {data_table}")
-
+    ##########################
+    # Check 1 - does project data already exist for this project
+    # if so, quit!
+    ##########################
     print("Checking if data already exists")
     project_data_exists = check_project_data_exists(pieval_engine, project_name)
     if project_data_exists:
         print("There project already exists, remove it before continuing!!...quitting")
         sys.exit()
 
-    # Assuming no existing data was found, move on to creating project artifacts
-    # work from bottom up so project becomes clickable AFTER all artifacts are in place
-    # FIRST - interrupt and double check before committing to DB
-    proceed = input(f"Are you sure you want to load project {project_name} with {stage_data.shape[0]} records and {len(user_list)} Users into {config.DATASOURCE_LOCATION} [y/n]")
+    ##########################
+    # Provide summary and ask for permission to proceed
+    ##########################
+    print()
+    print("="*100)
+    print("-"*10,"Project Create Review","-"*10)
+    print("=" * 100)
+    print(f"Project name will be:     {project_name}")
+    print(f"Project description:      {proj_desc}")
+    print(f"Project Mode is:          {proj_mode}")
+    print(f"User list:                {user_list}")
+    print(f"Data will be loaded from: {data_table}")
+    print(f"Project data record size: {stage_data.shape[0]}")
+    print(f"Data will be loaded to {config.DATASOURCE_LOCATION}")
+    print()
+    proceed = input(f"Are you sure you want to proceed [y/n]")
+
     if proceed == 'y':
         print("Loading your project")
         # def insert project data
@@ -169,18 +183,6 @@ def get_project_staging_data(pieval_engine, data_table, key_col="example_id"):
     assert stage_data[key_col].is_unique
 
     return stage_data
-
-def create_backup(pieval_engine):
-    con = pieval_engine.raw_connection()
-    curs = con.cursor()
-    for table,_ in metadata.table_dict.items():
-        drop_sql = """drop table pieval_backup.{}""".format(table)
-        ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
-        curs.execute(drop_sql)
-        curs.execute(ins_sql)
-    curs.commit()
-    curs.close()
-    con.close()
 
 ##################################################
 # main
