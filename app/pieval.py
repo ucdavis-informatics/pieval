@@ -189,9 +189,29 @@ def project(project_name=None):
                 project_data = pv_dl.getProjectData(project_name=project_name)
                 # logger.debug(f'In project() Project data for {project_name} is {project_data}')
                 proj_example_list = [x['example_id'] for x in project_data]
-                # check to see if they have annotated this project before.  If so, alter order object by removing already seen examples
-                prev_proj_annots_for_user = pv_dl.getPriorAnnotations(project_name=project_name, user_name=session['user_name'])
+
+                # get prior annotations for this project
+                prev_proj_annots_for_user_df = pv_dl.getPriorAnnotations(project_name=project_name, return_as_dataframe=True)
+                project_leaderboard = (prev_proj_annots_for_user_df.groupby(['user_name']).size()
+                                       .to_frame()
+                                       .rename(columns={0: 'annotation_count'})
+                                       .sort_values(['annotation_count'], ascending=False)
+                                       .reset_index(drop=False))
+                # add medals
+                if project_leaderboard.shape[0] >= 1:
+                    project_leaderboard.loc[0, 'medal'] = 'images/gold_small.png'
+                if project_leaderboard.shape[0] >= 2:
+                    project_leaderboard.loc[1, 'medal'] = 'images/silver_small.png'
+                if project_leaderboard.shape[0] >= 3:
+                    project_leaderboard.loc[2, 'medal'] = 'images/bronze_small.png'
+                project_leaderboard['medal'] = project_leaderboard['medal'].fillna('images/sad_small.png')
+
+                project_leaderboard = project_leaderboard.to_dict(orient='records')
+                project_leaderboard
+
+                prev_proj_annots_for_user = prev_proj_annots_for_user_df.loc[prev_proj_annots_for_user_df['user_name']==session['user_name']].to_dict(orient='records')
                 prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
+
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token.html')
 
@@ -208,7 +228,8 @@ def project(project_name=None):
             return render_template('project.html',
                                    project_metadata=project_metadata,
                                    total_examples=len(proj_example_list),
-                                   user_examples=len(prior_example_list))
+                                   user_examples=len(prior_example_list),
+                                   project_leaderboard=project_leaderboard)
         else:
             logger.error('Not authorized for this project')
             return pievalIndex()

@@ -70,6 +70,10 @@ class FileDataLoader(object):
         self.database_dir = database_dir
         self.logger=logger
 
+    def getUserData(self, return_as_data_frame=False):
+        user_data = pd.read_csv(os.path.join(self.database_dir, 'user_data.csv'))
+        return user_data if return_as_data_frame else user_data.to_dict(orient='records')
+
     def getProjects(self, user_name=None, return_as_dataframe=False):
         projects = pd.read_csv(os.path.join(self.database_dir, 'projects.csv'))
         if user_name:
@@ -116,23 +120,22 @@ class FileDataLoader(object):
         return class_df['class'].to_list()
 
     def getPriorAnnotations(self, project_name=None, user_name=None, return_as_dataframe=False):
-        if pd.isnull(project_name) and pd.isnull(user_name):
-            # cant do anything
-            if self.logger:
-                self.logger.error("I need a project AND a username!")
-                return {}
-        elif pd.isnull(project_name) and pd.notnull(user_name):
-            # get all prior annotations for this user, all projects
             data_df = pd.read_csv(os.path.join(self.database_dir, 'annotation_events.csv'))
-            data_df = data_df.loc[data_df['user_name'] == user_name]
+            if pd.isnull(project_name) and pd.notnull(user_name):
+                # get all prior annotations for this user, all projects
+                data_df = data_df.loc[data_df['user_name'] == user_name]
+            elif pd.notnull(project_name) and pd.notnull(user_name):
+                # get prior annotations for this use for one project
+                data_df = data_df.loc[((data_df['user_name'] == user_name) & (data_df['project_name'] == project_name))]
+            elif pd.notnull(project_name) and pd.isnull(user_name):
+                # get prior annotations for this project, all users
+                data_df = data_df.loc[data_df['project_name'] == project_name]
+            else:
+                # return all data
+                pass
+
             return data_df if return_as_dataframe else data_df.to_dict(orient='records')
-        elif pd.notnull(project_name) and pd.notnull(user_name):
-            # get prior annotations for this use for one project
-            data_df = pd.read_csv(os.path.join(self.database_dir, 'annotation_events.csv'))
-            data_df = data_df.loc[((data_df['user_name'] == user_name) & (data_df['project_name'] == project_name))]
-            return data_df if return_as_dataframe else data_df.to_dict(orient='records')
-        else:
-            pass
+
 
     def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response, context_viewed):
         new_row = pd.DataFrame(data={'response_time': response_time,
@@ -213,6 +216,12 @@ class DBDataLoader(object):
         else:
             self.io_db_engine = self.createEngine()
 
+    def getUserData(self, return_as_data_frame=False):
+        self.checkEngine()
+        sql="select * from {}.user_details".format(self.schema_name)
+        user_data = pd.read_sql(sql, self.io_db_engine)
+        return user_data if return_as_data_frame else user_data.to_dict(orient='records')
+
     def getProjects(self, user_name=None, return_as_dataframe=False):
         self.checkEngine()
         sql = """select * from {}.projects""".format(self.schema_name)
@@ -270,23 +279,25 @@ class DBDataLoader(object):
 
     def getPriorAnnotations(self, project_name=None, user_name=None, return_as_dataframe=False):
         self.checkEngine()
-        if pd.isnull(project_name) and pd.isnull(user_name):
-            # cant do anything
-            if self.logger:
-                self.logger.error("I need a project AND a username!")
-                return {}
+        sql = """select * from {}.annotation_events""".format(self.schema_name)
+        data_df = pd.read_sql(sql, self.io_db_engine)
+        if pd.isnull(project_name) and pd.notnull(user_name):
+            # get all prior annotations for this user, all projects
+            data_df = data_df.loc[data_df['user_name'] == user_name]
+        elif pd.notnull(project_name) and pd.notnull(user_name):
+            # get prior annotations for this user for one project
+            data_df = data_df.loc[((data_df['user_name'] == user_name) & (data_df['project_name'] == project_name))]
+        elif pd.notnull(project_name) and pd.isnull(user_name):
+            # get prior annotations for this project, all users
+            data_df = data_df.loc[data_df['project_name'] == project_name]
         else:
-            # get data
-            sql = """select * from {}.annotation_events""".format(self.schema_name)
-            data_df = pd.read_sql(sql, self.io_db_engine)
-            if pd.isnull(project_name) and pd.notnull(user_name):
-                # get all prior annotations for this user, all projects
-                data_df = data_df.loc[data_df['user_name'] == user_name]
-                return data_df if return_as_dataframe else data_df.to_dict(orient='records')
-            elif pd.notnull(project_name) and pd.notnull(user_name):
-                # get prior annotations for this use for one project
-                data_df = data_df.loc[((data_df['user_name'] == user_name) & (data_df['project_name'] == project_name))]
-                return data_df if return_as_dataframe else data_df.to_dict(orient='records')
+            # return all the data
+            if self.logger:
+                self.logger.info("Requesting ALL annotations!")
+            pass
+
+        # return the data
+        return data_df if return_as_dataframe else data_df.to_dict(orient='records')
 
     def saveAnnot(self, response_time, project_name, user_name, user_ip, example_id, response, context_viewed):
         self.checkEngine()

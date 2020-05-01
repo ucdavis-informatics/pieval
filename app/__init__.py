@@ -1,11 +1,30 @@
-from flask import Flask, Blueprint
+from flask import Flask
+from flask_apscheduler import APScheduler
+import sys
+import socket
 
 # CREATE APP OBJECT
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py')
-
-# import the code that actually executes app functions
 from app import pieval
+from app import tasks
+
+# start scheduler
+# with mega hack from SO that arbitrarily binds a socket as 'flag' to tell other workers
+# not to also create a scheduler - clever
+# https://stackoverflow.com/questions/16053364/make-sure-only-one-worker-launches-the-apscheduler-event-in-a-pyramid-web-app-ru
+try:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("127.0.0.1", 47200))
+except socket.error:
+    print("!!!scheduler already started, DO NOTHING")
+else:
+    print("Starting Scheduler because it does not exist yet!")
+    scheduler = APScheduler()
+    scheduler.init_app(app)
+    scheduler.start()
+
 app.register_blueprint(pieval.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
-# app config
 app.secret_key = app.config['SECRET_KEY']
+
+

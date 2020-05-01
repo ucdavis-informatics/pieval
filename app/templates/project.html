@@ -23,6 +23,21 @@
       <input type="submit" value="Start Annotating!">
       </div>
     </form>
+    <h2>Leaderboard</h2>
+    <table class="center_table">
+      <tr>
+        <th>Annotator</th>
+        <th>Number of Annotations</th>
+          <th>Status</th>
+      </tr>
+      {% for pl in project_leaderboard %}
+      <tr>
+        <td>{{ pl.user_name }}</td>
+        <td>{{ pl.annotation_count }}</td>
+        <td><img src="{{ url_for('pieval.static',filename=pl.medal) }}" alt="Annotator Status"></td>
+      </tr>
+      {% endfor %}
+    </table>
   </div>
 </body>
 </html>
