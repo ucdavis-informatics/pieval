@@ -1,18 +1,17 @@
 from flask import Flask
 from flask_apscheduler import APScheduler
-import sys
 import socket
 
 # CREATE APP OBJECT
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py')
 from app import pieval
-from app import tasks
 
 # start scheduler
 # with mega hack from SO that arbitrarily binds a socket as 'flag' to tell other workers
 # not to also create a scheduler - clever
 # https://stackoverflow.com/questions/16053364/make-sure-only-one-worker-launches-the-apscheduler-event-in-a-pyramid-web-app-ru
+
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(("127.0.0.1", 47200))

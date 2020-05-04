@@ -4,10 +4,10 @@ from app.data_loader import FileDataLoader, DBDataLoader
 import instance.config as config
 from smtplib import SMTP
 from email.message import EmailMessage
+import click
 
-TEST_TEXT="The Bildo"
-
-def send_reminders(DATASOURCE_LOCATION, VAULT_TOKEN, VAULT_SERVER, DB_SCHEMA, FROM_EMAIL, IGNORE_SEND, DAYS_TILL_PROMPT):
+@click.command(name='send_reminders')
+def send_reminders():
     """Build a logger"""
     logger = logging.getLogger(__name__)
     # formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -18,12 +18,12 @@ def send_reminders(DATASOURCE_LOCATION, VAULT_TOKEN, VAULT_SERVER, DB_SCHEMA, FR
 
     """Build datasource"""
     if config.DATASOURCE_TYPE == 'file':
-        pv_dl = FileDataLoader(DATASOURCE_LOCATION, logger)
+        pv_dl = FileDataLoader(config.DATASOURCE_LOCATION, logger)
     elif config.DATASOURCE_TYPE == 'db':
-        pv_dl = DBDataLoader(VAULT_TOKEN,
-                             VAULT_SERVER,
-                             DATASOURCE_LOCATION,
-                             DB_SCHEMA,
+        pv_dl = DBDataLoader(config.VAULT_TOKEN,
+                             config.VAULT_SERVER,
+                             config.DATASOURCE_LOCATION,
+                             config.DB_SCHEMA,
                              logger)
 
     # get user data - this will limit to people who have been configured to receive alerts
@@ -36,9 +36,12 @@ def send_reminders(DATASOURCE_LOCATION, VAULT_TOKEN, VAULT_SERVER, DB_SCHEMA, FR
         email = one_user.get('email')
 
         # get data for this user
+        logger.info(f"Getting data for {user_name}")
         try:
             pieval_projects = pv_dl.getProjects(user_name=user_name, return_as_dataframe=True)
+            logger.info(f"User has {pieval_projects.shape[0]} projects")
             prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=user_name, return_as_dataframe=True)
+            logger.info(f"User has {prev_annots_for_user.shape[0]} completed annotations")
 
             # group and join
             proj_example_counts = (data.groupby(['project_name'])
@@ -54,6 +57,7 @@ def send_reminders(DATASOURCE_LOCATION, VAULT_TOKEN, VAULT_SERVER, DB_SCHEMA, FR
             )
                                 .reset_index())
             user_proj_counts['days_since_last'] = (pd.datetime.now() - user_proj_counts['last_annot_time']).dt.days
+            logger.info(user_proj_counts.head())
 
             proj_status = pd.merge(proj_example_counts,
                                    user_proj_counts,
@@ -61,10 +65,10 @@ def send_reminders(DATASOURCE_LOCATION, VAULT_TOKEN, VAULT_SERVER, DB_SCHEMA, FR
                                    how='left')
             proj_status['pct_complete'] = round((proj_status['num_annotated'] / proj_status['num_examples']) * 100)
             proj_status = proj_status.fillna(0)
-            pieval_projects = pieval_projects.merge(proj_status.filter(['project_name', 'pct_complete']),
+            pieval_projects = pieval_projects.merge(proj_status.filter(['project_name', 'pct_complete','days_since_last']),
                                                     on='project_name', how='left')
             prompts = (pieval_projects.loc[((pieval_projects['pct_complete'] < 100)
-                                            &(pieval_projects['days_since_last'] >= DAYS_TILL_PROMPT))]
+                                            &(pieval_projects['days_since_last'] >= config.DAYS_TILL_PROMPT))]
                                    .to_dict(orient='records'))
 
             logger.info(f"Current Username is {user_name}, print name is {print_name} and email is {email}")
@@ -86,10 +90,10 @@ Please login here to finish up: {config.HOST_FQDN + config.BLUEPRINT_URL_PREFIX}
                 msg = EmailMessage()
                 msg.set_content(message)
                 msg['Subject'] = f'Pieval Annotation Reminder'
-                msg['From'] = FROM_EMAIL
+                msg['From'] = config.FROM_EMAIL
                 msg['To'] = email
 
-                if IGNORE_SEND:
+                if config.IGNORE_SEND:
                     logger.info("DRY RUN!! Printing to console, not sending emails")
                     print(message)
                 else:

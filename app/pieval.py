@@ -21,6 +21,7 @@ from app.data_loader import (
 
 # define the app
 from app import app
+#from app import scheduler
 # wrap app in auth
 oidc = OpenIDConnect(app)
 
