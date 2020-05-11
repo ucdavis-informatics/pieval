@@ -4,9 +4,7 @@ from app.data_loader import FileDataLoader, DBDataLoader
 import instance.config as config
 from smtplib import SMTP
 from email.message import EmailMessage
-import click
 
-@click.command(name='send_reminders')
 def send_reminders():
     """Build a logger"""
     logger = logging.getLogger(__name__)
