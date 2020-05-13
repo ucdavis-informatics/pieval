@@ -24,6 +24,9 @@
       </div>
     </form>
     <h2>Leaderboard</h2>
+    {%  if project_leaderboard|length ==0 %}
+        <p>Be the first on the leaderboard!</p>
+    {% endif %}
     <table class="center_table">
       <tr>
         <th>Annotator</th>
