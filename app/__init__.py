@@ -10,6 +10,8 @@ from app import pieval
 # start scheduler
 # with mega hack from SO that arbitrarily binds a socket as 'flag' to tell other workers
 # not to also create a scheduler - clever
+# Downsides - This relies on not needing this socket for something else
+# Also relies on GC to clean it up if it's not being used
 # https://stackoverflow.com/questions/16053364/make-sure-only-one-worker-launches-the-apscheduler-event-in-a-pyramid-web-app-ru
 
 try:
@@ -25,5 +27,4 @@ else:
 
 app.register_blueprint(pieval.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
 app.secret_key = app.config['SECRET_KEY']
-
 

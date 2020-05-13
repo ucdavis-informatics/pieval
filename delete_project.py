@@ -7,6 +7,10 @@ import click
 import instance.config as config
 import example_database.table_metadata as metadata
 from db_utils import get_db_connection, create_backup
+import logging
+from piesafe import piesafe
+piesafe.init_logging('example_log/setup')
+logger = logging.getLogger(__name__)
 
 
 ##################################################

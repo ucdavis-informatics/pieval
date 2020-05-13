@@ -54,6 +54,8 @@ Werkzeug = "==0.16.0"
 gunicorn = "==20.0.4"
 funcy = "*"
 flask-apscheduler = "*"
+piesafe = {editable = true,git = "https://gitlab.ri.ucdavis.edu/mrenquis/piesafe.git",ref = "v0.0.5"}
+python-dotenv = "*"
 
 [requires]
 python_version = "3.6"

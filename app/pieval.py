@@ -49,7 +49,8 @@ logger.addHandler(ch)
 if app.config['DATASOURCE_TYPE'] == 'file':
     pv_dl = FileDataLoader(app.config['DATASOURCE_LOCATION'], logger)
 elif app.config['DATASOURCE_TYPE'] == 'db':
-    pv_dl = DBDataLoader(app.config['VAULT_TOKEN'],
+    pv_dl = DBDataLoader(app.config['VAULT_ROLE_ID'],
+                         app.config['VAULT_SECRET_ID'],
                          app.config['VAULT_SERVER'],
                          app.config['DATASOURCE_LOCATION'],
                          app.config['DB_SCHEMA'],

@@ -47,6 +47,12 @@ projects_metadata = {
     'project_mode': types.NVARCHAR(50)
 }
 
+user_details_metadata = {
+    'user_name': types.NVARCHAR(100),
+    'print_name': types.NVARCHAR(100),
+    'email': types.NVARCHAR(150)
+}
+
 
 # wrapping it all into a single iterable
 table_dict = {
@@ -54,5 +60,6 @@ table_dict = {
     'project_classes': {'filename': 'project_classes.csv', 'metadata': project_classes_metadata},
     'project_data': {'filename': 'project_data.csv', 'metadata': project_data_metadata},
     'project_users': {'filename': 'project_users.csv', 'metadata': project_users_metadata},
-    'projects': {'filename': 'projects.csv', 'metadata': projects_metadata}
+    'projects': {'filename': 'projects.csv', 'metadata': projects_metadata},
+    'user_details': {'filename': 'user_details.csv', 'metadata': user_details_metadata}
 }

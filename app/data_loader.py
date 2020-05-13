@@ -9,6 +9,7 @@ import pandas as pd
 import sqlalchemy
 import urllib
 import hvac
+from piesafe import piesafe
 
 
 #########################################################################
@@ -160,8 +161,10 @@ class FileDataLoader(object):
 #  Db Loader Class
 ##############################################################################
 class DBDataLoader(object):
-    def __init__(self, VAULT_TOKEN, VAULT_SERVER, io_db_vault_path, schema_name, logger=None):
-        self.vault_token = VAULT_TOKEN
+    def __init__(self, VAULT_ROLE_ID, VAULT_SECRET_ID, VAULT_SERVER, io_db_vault_path, schema_name, logger=None):
+        #self.vault_token = VAULT_TOKEN
+        self.vault_role_id = VAULT_ROLE_ID
+        self.vault_secret_id = VAULT_SECRET_ID
         self.vault_server = VAULT_SERVER
         self.io_db_vault_path = io_db_vault_path
         self.schema_name = schema_name
@@ -172,15 +175,20 @@ class DBDataLoader(object):
         '''
         Creates a database engine
         '''
-        try:
-            vaultClient = hvac.Client(url=self.vault_server,
-                                      token=self.vault_token)
-            pieval_secret = vaultClient.read(self.io_db_vault_path)
-        except hvac.exceptions.Forbidden as e:
-            self.logger.error(e)
-            raise InvalidVaultTokenError(f"Vault token is invalid!")
+        # try:
+        #     vaultClient = hvac.Client(url=self.vault_server,
+        #                               token=self.vault_token)
+        #     pieval_secret = vaultClient.read(self.io_db_vault_path)
+        # except hvac.exceptions.Forbidden as e:
+        #     self.logger.error(e)
+        #     raise InvalidVaultTokenError(f"Vault token is invalid!")
+        vaultClient = piesafe.init_vault(None,
+                                         vault_server=self.vault_server,
+                                         vault_role_id=self.vault_role_id,
+                                         vault_secret_id=self.vault_secret_id)
+        pieval_secret = vaultClient.read(self.io_db_vault_path)
 
-        print("creating sqlalchemy engine")
+        self.logger.info("creating sqlalchemy engine")
         self.pieval_db_type = pieval_secret.get('data').get('dbtype')
         if self.pieval_db_type == 'oracle':
             if self.logger:

@@ -1,6 +1,9 @@
 import sqlalchemy
 import urllib
-import hvac
+import logging
+from piesafe import piesafe
+piesafe.init_logging('example_log/setup')
+logger = logging.getLogger(__name__)
 
 def getOraDBEngine(inUsername, inPassword, inURL):
     '''
@@ -41,14 +44,17 @@ def getMSSQLEngine(inDriver, inServer, inDb, inUsername, inPassword):
 
 def get_db_connection(config):
     if config.DATASOURCE_TYPE == 'db':
-        print("I can start building your database")
-        print("Obtaining connection")
-        print("Getting secrets from vault")
-        vaultClient = hvac.Client(url=config.VAULT_SERVER,
-                                  token=config.VAULT_TOKEN)
-        pieval_secret = vaultClient.read(config.DATASOURCE_LOCATION)
+        logger.info("I can start building your database")
+        logger.info("Obtaining connection")
+        logger.info("Getting secrets from vault")
+        #vaultClient = hvac.Client(url=config.VAULT_SERVER)
+        vaultClient = piesafe.init_vault(None,
+                                         vault_server=config.VAULT_SERVER,
+                                         vault_role_id=config.VAULT_ROLE_ID,
+                                         vault_secret_id=config.VAULT_SECRET_ID)
 
-        print("creating sqlalchemy engine")
+        pieval_secret = vaultClient.read(config.DATASOURCE_LOCATION)
+        logger.info("creating sqlalchemy engine")
         pievalDBType = pieval_secret.get('data').get('dbtype')
         if pievalDBType == 'oracle':
             pievalUser = pieval_secret.get('data').get('username')
@@ -65,7 +71,7 @@ def get_db_connection(config):
                                           myUsername, myPassword)
         return pievalEngine
     else:
-        print("Current datasource type is defined as file...no database to build!")
+        logger.info("Current datasource type is defined as file...no database to build!")
         return None
 
 def create_backup(pieval_engine, metadata):
@@ -74,12 +80,16 @@ def create_backup(pieval_engine, metadata):
     for table,_ in metadata.table_dict.items():
         try:
             drop_sql = """drop table pieval_backup.{}""".format(table)
+            curs.execute(drop_sql)
         except Exception as e:
-            print("There was an error dropping the table!!")
-            print(e)
-        ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
-        curs.execute(drop_sql)
-        curs.execute(ins_sql)
-    curs.commit()
+            logger.error("There was an error dropping the table!!")
+            logger.error(e)
+        try:
+            ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
+            curs.execute(ins_sql)
+            curs.commit()
+        except Exception as e:
+            logger.error("There was a problem backing up the table!!")
+            logger.error(e)
     curs.close()
     con.close()

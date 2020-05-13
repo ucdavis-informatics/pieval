@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d3c4e057e1554e1f43818beafa15b62965624cde8b7c5663bb9c726f2c738878"
+            "sha256": "46887bede061c3b5131ea386ab9d248bcbaefc76f300b2bc1d948cdd99918b9a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -342,6 +342,11 @@
             "index": "pypi",
             "version": "==0.7.5"
         },
+        "piesafe": {
+            "editable": true,
+            "git": "https://gitlab.ri.ucdavis.edu/mrenquis/piesafe.git",
+            "ref": "d7aa089361ede8c90f0bd0cfada04f07aa9b6304"
+        },
         "prompt-toolkit": {
             "hashes": [
                 "sha256:0278d2f51b5ceba6ea8da39f76d15684e84c996b325475f6e5720edc584326a7",
@@ -408,6 +413,14 @@
             ],
             "index": "pypi",
             "version": "==2.8.1"
+        },
+        "python-dotenv": {
+            "hashes": [
+                "sha256:25c0ff1a3e12f4bde8d592cc254ab075cfe734fc5dd989036716fd17ee7e5ec7",
+                "sha256:3b9909bc96b0edc6b01586e1eed05e71174ef4e04c71da5786370cebea53ad74"
+            ],
+            "index": "pypi",
+            "version": "==0.13.0"
         },
         "pytz": {
             "hashes": [
@@ -505,10 +518,10 @@
         },
         "tzlocal": {
             "hashes": [
-                "sha256:11c9f16e0a633b4b60e1eede97d8a46340d042e67b670b290ca526576e039048",
-                "sha256:949b9dd5ba4be17190a80c0268167d7e6c92c62b30026cf9764caf3e308e5590"
+                "sha256:643c97c5294aedc737780a49d9df30889321cbe1204eac2c2ec6134035a92e44",
+                "sha256:e2cb6c6b5b604af38597403e9852872d7f534962ae2954c7f35efcb1ccacf4a4"
             ],
-            "version": "==2.0.0"
+            "version": "==2.1"
         },
         "urllib3": {
             "hashes": [

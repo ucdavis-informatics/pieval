@@ -13,6 +13,10 @@ import sys
 import instance.config as config
 import example_database.table_metadata as metadata
 from db_utils import get_db_connection, create_backup
+import logging
+from piesafe import piesafe
+piesafe.init_logging('example_log/setup')
+logger = logging.getLogger(__name__)
 
 
 ##################################################
@@ -41,15 +45,15 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
     #########################
     # set up
     #########################
-    print(f"Getting pieval database connection (based on parameters in instance/config) to {config.DATASOURCE_LOCATION}")
+    logger.info(f"Getting pieval database connection (based on parameters in instance/config) to {config.DATASOURCE_LOCATION}")
     pieval_engine = get_db_connection(config)
-    print("Creating Backup in pieval_backup schema in case things go sideways")
+    logger.info("Creating Backup in pieval_backup schema in case things go sideways")
     create_backup(pieval_engine, metadata)
 
-    print("Loading staged data into memory")
+    logger.info("Loading staged data into memory")
     stage_data = get_project_staging_data(pieval_engine, data_table)
     project_name = stage_data['project_name'].unique()[0]
-    print("-"*10,project_name,"-"*10)
+    logger.info("-"*10,project_name,"-"*10)
 
     if proj_mode=='multiclass':
         classes = get_class_data(pieval_engine,classes_table)
@@ -58,31 +62,31 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
     # Check 1 - does project data already exist for this project
     # if so, quit!
     ##########################
-    print("Checking if data already exists")
+    logger.info("Checking if data already exists")
     project_data_exists = check_project_data_exists(pieval_engine, project_name)
     if project_data_exists:
-        print("There project already exists, remove it before continuing!!...quitting")
+        logger.info("There project already exists, remove it before continuing!!...quitting")
         sys.exit()
 
     ##########################
     # Provide summary and ask for permission to proceed
     ##########################
-    print()
-    print("="*100)
-    print("-"*10,"Project Create Review","-"*10)
-    print("=" * 100)
-    print(f"Project name will be:     {project_name}")
-    print(f"Project description:      {proj_desc}")
-    print(f"Project Mode is:          {proj_mode}")
-    print(f"User list:                {user_list}")
-    print(f"Data will be loaded from: {data_table}")
-    print(f"Project data record size: {stage_data.shape[0]}")
-    print(f"Data will be loaded to {config.DATASOURCE_LOCATION}")
-    print()
+    logger.info()
+    logger.info("="*100)
+    logger.info("-"*10,"Project Create Review","-"*10)
+    logger.info("=" * 100)
+    logger.info(f"Project name will be:     {project_name}")
+    logger.info(f"Project description:      {proj_desc}")
+    logger.info(f"Project Mode is:          {proj_mode}")
+    logger.info(f"User list:                {user_list}")
+    logger.info(f"Data will be loaded from: {data_table}")
+    logger.info(f"Project data record size: {stage_data.shape[0]}")
+    logger.info(f"Data will be loaded to {config.DATASOURCE_LOCATION}")
+    logger.info()
     proceed = input(f"Are you sure you want to proceed [y/n]")
 
     if proceed == 'y':
-        print("Loading your project")
+        logger.info("Loading your project")
         # def insert project data
         insert_project_data(pieval_engine,stage_data)
         # def insert project users
@@ -90,10 +94,10 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
         # def insert project
         insert_project(pieval_engine,project_name,proj_desc,proj_mode)
         if proj_mode == 'multiclass':
-            print("Writting classed to db")
+            logger.info("Writting classed to db")
             insert_classes(pieval_engine, classes)
     else:
-        print("You decided to halt insert...quitting")
+        logger.info("You decided to halt insert...quitting")
         sys.exit()
 
 
@@ -143,7 +147,7 @@ def check_project_data_exists(pieval_engine, project_name):
                     params=[project_name]).iloc[0].values[0]
         if count > 0:
             check=True
-            print(f"There is data under this proeject name in {k}")
+            logger.info(f"There is data under this proeject name in {k}")
 
     return check
 
@@ -151,7 +155,7 @@ def get_class_data(pieval_engine, classes_table):
     sql = "select * from pieval_stage.{}".format(classes_table)
     classes = pd.read_sql(sql, pieval_engine)
 
-    print("Ensuring columns are correct")
+    logger.info("Ensuring columns are correct")
     # assert the expected columns are in place
     for k, v in metadata.project_classes_metadata.items():
         assert k in classes.columns
@@ -170,7 +174,7 @@ def get_project_staging_data(pieval_engine, data_table, key_col="example_id"):
     sql = "select * from pieval_stage.{}".format(data_table)
     stage_data = pd.read_sql(sql, pieval_engine)
 
-    print("Ensuring columns are correct")
+    logger.info("Ensuring columns are correct")
     # assert the expected columns are in place
     for k,v in metadata.project_data_metadata.items():
         assert k in stage_data.columns
@@ -178,7 +182,7 @@ def get_project_staging_data(pieval_engine, data_table, key_col="example_id"):
     # make sure there are no 'extra' columns
     assert len(stage_data.columns) == len(metadata.project_data_metadata)
 
-    print(f"Ensuring {key_col} contains unique values")
+    logger.info(f"Ensuring {key_col} contains unique values")
     # make sure key_col is unique
     assert stage_data[key_col].is_unique
 
