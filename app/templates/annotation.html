@@ -5,6 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Annotation Page for {{ one_example.project_name }}</title>
   <script rel= "script" type= "text/javascript" src= "{{ url_for('pieval.static',filename='scripts/pieval.js') }}"></script>
+    <script type="text/javascript">
+    function validateAnnotSelection(){
+        tt = (element) => element;
+        rbs = document.querySelectorAll('input[name="response"]');
+        rb_checked = [];
+        for(rb of rbs){
+          rb_checked.push(rb.checked)
+          console.log(rb.checked)
+        }
+        if(rb_checked.some(tt)){
+            return true
+        }else{
+            alert("Select a value first!")
+            return false
+        }
+    }
+  </script>
 </head>
 <body>
   <div class="topnav">
@@ -37,7 +54,7 @@
         <input type="text" id="context_viewed" name="context_viewed" value="no"></input>
       </div>
       <div class="radio-submit">
-        <input type="submit">
+        <input type="submit" onclick="return validateAnnotSelection()">
       </div>
     </form>
   </div>
