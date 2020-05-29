@@ -1,24 +1,32 @@
-# pieval
+# PieVal
 ![pieval logo](app/static/images/pieVal_Logo_medium.png)  
 Author: Bill Riedl  
 Contributors: Joseph Cawood, Matt Renquist, Aaron Rosenburg, Jp Graff, Cy Huynh  
 Original Author Date: 2019-01-13   
-Current Status: Alpha  
-Cur Status Date: 2019-01-29
+Current Status: Stable  
+Cur Status Date: 2019-05-29
 
 ## Background
-pieval is the product of an idea, many work hours, a prototype in another language, and fairly extensive user testing.  And it's still growing.  The idea was a clever repurposing of common web app functionality seen in viral social apps like Tinder.  In these apps, users record their preferences with a quick swipe of the screen.  We wanted to bring that efficiency to data labeling efforts.  This work originated in a clinical setting in which data labelling has been prohibitively expensive, stunting the expanded use of machine learning.  Typically, data labelling efforts involves clinical experts reviewing data directly in an Electronic Medical Record, often taking minutes just to locate the data being reviewed, then entering their findings in a separate tool.  pieval removes all of this complexity, placing the data and the response capture in a lightweight, distraction free UI.  Admittedly, this makes the annotation job set-up a bit more expensive.  However, that's concentrated as a one-time effort rather than forcing each annotator to pay the cost over and over.
+PieVal is the product of an idea, many work hours, a prototype in another language, and fairly extensive user testing.  And it's still growing.  The idea was a clever repurposing of common web app functionality seen in viral social apps like Tinder.  In these apps, users record their preferences with a quick swipe of the screen.  We wanted to bring that efficiency to data labeling efforts.  This work originated in a clinical setting in which data labelling has been prohibitively expensive, stunting the expanded use of machine learning.  Typically, data labelling efforts involves clinical experts reviewing data directly in an Electronic Medical Record, often taking minutes just to locate the data being reviewed, then entering their findings in a separate tool.  PieVal removes all of this complexity, placing the data and the response capture in a lightweight, distraction free UI.  Admittedly, this makes the annotation job set-up a bit more expensive.  However, that's concentrated as a one-time effort rather than forcing each annotator to pay the cost over and over.
 
-pieval began as an idea as a 5 person team grappled with how to accelerate a growing number of natural language processing techniques for the UC Davis Cancer center.  A few months after the idea was floated, Joseph Cawood tweaked some open source tooling, written in R, and leveraging the rShiny ecosystem to provide a prototype we could put in front of users([valR](https://gitlab.ri.ucdavis.edu/ri/pydatautils/ucd-ri-dataval/tree/dev-br/valR)).  This prototype was invaluable in helping to shape the requirements of a production system.  After a few iterations in R/rShiny it became apparent that the framework was not up to the task.  The app was ported to Python using the Flask webapp framework in January 2020.
+PieVal began as an idea as a 5 person team grappled with how to accelerate a growing number of natural language processing techniques for the UC Davis Cancer center.  The first attempt started with some tweaked open source tooling, written in R, and leveraging the rShiny ecosystem to provide a prototype we could put in front of users: ([valR - link not accessible from outside UCD](https://gitlab.ri.ucdavis.edu/ri/pydatautils/ucd-ri-dataval/tree/dev-br/valR)).  After a few iterations in R/rShiny it became apparent that the framework was not up to the task but, it had been extremely helpful in shaping the final requirements.  The app was ported to Python using the Flask webapp framework in January 2020.
 
 ### Contributors
 Bill Riedl: Idea guy / Lead dev  
-Joseph Cawood: valR prototype author  
-Matt Renquist: Keycloak auth strategy and deployment strategy using Gunicorn and Apache Proxies.  
-Aaron Rosenburg: Primary clincal test user  
+Joseph Cawood: valR prototype author/ PieVal power user  
+Matt Renquist: Auth and Deployment strategy  
+Aaron Rosenburg: Primary clinical test user  
 Jp Graff: Clincal test user  
 Cy Huynh: Logo Developer  
 
+---
+## Key Features
+- Secure (when served over HTTPS and secured by Keycloak)
+- Gamified - Make annotating fun again!  #MAFA.  This is accomplished primarily with a project leaderboard, allowing for friendly competitions.  Best if combined with incentives, like coffee cards. 
+- Assertion tester - Rather than presenting the user with data and asking for an annotation, we present the user with data, an assertion (either human or machine generated) and ask them to Agree, Disagree, Review, or Pass.  The result is a consistent UI that does not change, no matter the task.  This allows user to become extremely efficient at using the tool.
+- Built in enrichment strategy testing.  By default present the user a clipped, enriched, or otherwise modified version of the data designed to improve both the annotation and downstream ML process.  But, save the unmodified data and present it IF the annotator asks for it.  The ask is recorded with the annotation.  This allows you measure the effectiveness of enrichment strategies.
+- Easy configuration to set up annotation quality with both IntrA and IntER operator agreement statistics
+- Annotation compliance - system can be configured to send reminder emails to keep people engaged without you having to lift a finger.
 ___
 
 ## Technical Deets
@@ -40,10 +48,9 @@ These files are NOT checked into the git repo because they may contain secrets. 
 ```py
 #################
 # App config
-# this will change the default prefix added by the blueprint
-# For this app, common sense choices are either '/' or '/pieval'
 #################
-BLUEPRINT_URL_PREFIX = '/'
+BLUEPRINT_URL_PREFIX = '/'  # commonly either '/' or '/pieval'
+HOST_FQDN='http://localhost:5001'  # varies.  This example is correct if running on localhost with '/' url prefix
 
 #################
 # data source config
@@ -60,13 +67,13 @@ DATASOURCE_LOCATION = 'example_database/'
 For prod deployments:
 - change DATASOURCE_TYPE = 'db'
 - change DATASOURCE_LOCATION to the vault path of your desired db
-Yes, this pretty much binds the app to UCD deployments but, vault goodness...
+Yes, the app is pretty bound to vault given this definition but, vault goodnees.  You should be using it...
 '''
-DATASOURCE_TYPE = 'file'
-DATASOURCE_LOCATION = 'example_database/'
+# DATASOURCE_TYPE = 'file'
+# DATASOURCE_LOCATION = 'example_database/'
 
-# DATASOURCE_TYPE = 'db'
-# DATASOURCE_LOCATION = 'cdi3/db/cdi3sql01/dev'
+DATASOURCE_TYPE = 'db'
+DATASOURCE_LOCATION = 'cdi3/db/cdi3sql01/dev'
 
 # defaulted to pieval.
 # Change this is you want to place tables in a different schema
@@ -86,14 +93,14 @@ LOGFILE_LOCATION = 'example_log/flask_server.log'
 ####################
 # secret config
 ####################
-# Vault config.  Vault is secrets as a service.  If you don't have Vault,
-# You must put a number of additional values in this file.  Namely, DB
-# connection info (host, port, user, password, db_type[oracle|mssql])
-# and then modify the source code a bit to grab these values rather than
-# vaults values
 VAULT_SERVER = 'https://vault-ri.ucdmc.ucdavis.edu:8200'
-VAULT_TOKEN = '<vault_token>'
-# used by Flask to sign the session object
+# VAULT_TOKEN = '<vault token>'  If not running as an approle with Vault, uncomment this line
+VAULT_ROLE_ID = '<role id>'
+VAULT_SECRET_ID = '<secret id>'
+VAULT_SECRET_ID_ACCESSOR = '<secret id accessor>'
+
+TOKEN_REFRESH = 13  # units match what's declared below for the job interval - Hours
+
 SECRET_KEY = '<super_secret_key>'
 
 
@@ -109,6 +116,29 @@ OIDC_USER_INFO_ENABLED=True
 OIDC_OPENID_REALM='cdi3'
 OIDC_SCOPES=['openid', 'email', 'profile']
 OIDC_INTROSPECTION_AUTH_METHOD='client_secret_post'
+
+
+# Background tasks
+# These jobs are executed by FlaskAPscheduler
+FROM_EMAIL = 'cdi3-tech@ucdavis.edu'
+IGNORE_SEND = True
+DAYS_TILL_PROMPT = 2
+JOBS = [
+        {
+            'id': 'annotation_reminder',
+            'func': 'send_reminders:send_reminders',
+            'trigger': 'cron',
+            'day_of_week': 'mon-fri',
+            'hour': '09'
+        },
+        {
+            'id': 'token_renew',
+            'func': 'renew_token:renew_token',
+            'trigger': 'interval',
+            'hours': TOKEN_REFRESH
+        }
+    ]
+
 ```
 
 **client_secrets.json**  
@@ -145,8 +175,6 @@ Get the Secret id
 ```shell script
 vault write -force auth/approle/role/pieval_role/secret-id
 ```
-
-
 
 ---
 
@@ -190,14 +218,15 @@ CREATE SCHEMA pieval;
 ```
 
 #### Scriptified schema build
-To have build_sql_database.py build the tables for you:  
+To have build_sql_database.py build OR update the tables for you:  
 1. Modify instance/config.py with the database parameters of your choosing
   - Set DATASOURCE_TYPE = 'db'
   - Set DATASOURCE_LOCATION = <vault path of your desired database>
 1. From within an activated pieval venv run:
 ```sh
 # flip yes to no in the keep_example_data argument if you want an empty database
-pipenv run python build_sql_database.py --keep_example_data yes
+# flip build to updated in build_or_update argument to have your current database upgraded to latest version!
+pipenv run python build_sql_database.py --keep_example_data yes --build_or_update build
 ```
 
 ---
@@ -265,14 +294,13 @@ If you want to run the app against a database locally, it adds another pre-req. 
 pipenv shell
 ```
 
-- Run App
-
-
+- Run App in Development Mode
 ```sh
 # Using development server with auto-reload
 python run.py
 ```
--OR-
+
+- OR Run App in production Mode with gunicorn
 
 ```sh
 # Run App using gunicorn that more closely matches the deployment environment
@@ -319,9 +347,24 @@ proxy_pass:
       - 'http://localhost:5001/pieval'
 ```
 
+### Background Tasks
+Using the [Flask AP Scheduler](https://github.com/viniciuschiele/flask-apscheduler) some helpful background tasks are triggered:
+1. Renew Vault approle token - Without any utilization the approle tokens expire every 192 hours.  This triggered task renews the token every 13 hours to prevent the approle token from expiring
+1. Send Reminder Emails - If configured, this task will send emails (only M-F at 0900) to all system users that have exceeded the configurable number of days since recording an annotation while they have active projects.  Helpful for annotation compliance.
+
+
+### Running the App disclaimers
+We built on top of two technologies we really like.  This disclaimer is to let you know we recognize this could make it hard to get this code running in your environment.  We use:
+1. [KeyCloak](https://www.keycloak.org) - for Authentication
+1. [Vault](https://www.vaultproject.io) - for Secret management
+Both technologies are open source and we cannot recommend them enough.  Having said that, if you are unable to run them in your environment, you will have to make some code changes and some config changes before this code will run.
+
+We are working on adding a flag that allows the app to run without an auth provider.  This will allow you to test the app in a prototype environment before committing to understanding/implementing AUTH.  Beyond this, we are leaving the task of integrating Auth to you.  It will vary wildly based on local resources and vibe.
+
+Divesting from vault shouldn't be too hard.  Pieval accesses Database connection information like host, port, database, username, and password from vault.  All of this happens in app/data_loader.py.  You could divest by instead putting all of the relevant DB connection details in instance/config.py, then referencing/using them appropriately in the data loader. 
 
 #### Apache and mod_wsgi
-This is not reccomended.  It requires using the same python version as mod_wsgi was compiled for.  Instead we reccomend using a wsgi container like Gunicorn, covered above.
+This is not recommended.  It requires using the same python version as mod_wsgi was compiled for.  Instead we recommend using a wsgi container like Gunicorn, covered above.
 Since this project is using a virtual env, we need to tell mod_wsgi where to get the correct python version and project packages.  These settings should go somewhere in the Apache config for this app.  These also need mods if not cloned/built in /var/www
 WSGIPythonHome /var/www/pieval/venv/bin/python
 WSGIPythonPath /var/www/pieval/venv/lib/python3.6/site-packages
