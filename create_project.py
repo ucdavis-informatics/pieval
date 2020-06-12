@@ -26,17 +26,17 @@ logger = logging.getLogger(__name__)
 @click.option("--data_table","-dt","data_table",
               required=True,
               help="Name of the staged data table in the pieval_stage schema")
-@click.option("--classes_table","-ct","classes_table",
-              required=False,
-              help="Name of the classes table in the pieval_stage schema")
 @click.option("--proj_desc","-pd","proj_desc",
               required=True,
-              help="Name of the staged data table in the pieval_stage schema")
+              help="String description of the project")
 @click.option("--proj_mode","-pm","proj_mode",
               required=True,
               type=click.Choice(['binary','multiclass']),
               default='binary',
               help="Project mode - binary or multiclass")
+@click.option("--classes_table","-ct","classes_table",
+              required=False,
+              help="Name of the classes table in the pieval_stage schema - NOTE: Required if you select multiclass")
 @click.option("--user","-u", "user_list",
               required=True,
               multiple=True,
@@ -53,7 +53,7 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
     logger.info("Loading staged data into memory")
     stage_data = get_project_staging_data(pieval_engine, data_table)
     project_name = stage_data['project_name'].unique()[0]
-    logger.info("-"*10,project_name,"-"*10)
+    logger.info(f"NEW Project Name: {project_name} -----------")
 
     if proj_mode=='multiclass':
         classes = get_class_data(pieval_engine,classes_table)
@@ -71,9 +71,8 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
     ##########################
     # Provide summary and ask for permission to proceed
     ##########################
-    logger.info()
     logger.info("="*100)
-    logger.info("-"*10,"Project Create Review","-"*10)
+    logger.info("--------------- Project Create Review -------------------")
     logger.info("=" * 100)
     logger.info(f"Project name will be:     {project_name}")
     logger.info(f"Project description:      {proj_desc}")
@@ -82,7 +81,7 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
     logger.info(f"Data will be loaded from: {data_table}")
     logger.info(f"Project data record size: {stage_data.shape[0]}")
     logger.info(f"Data will be loaded to {config.DATASOURCE_LOCATION}")
-    logger.info()
+    logger.info("="*100)
     proceed = input(f"Are you sure you want to proceed [y/n]")
 
     if proceed == 'y':

@@ -45,8 +45,12 @@ def do_delete_project(pieval_engine, project_name):
     con = pieval_engine.raw_connection()
     curs = con.cursor()
     for table, _ in metadata.table_dict.items():
-        del_sql = """delete from pieval.{} where project_name = ?""".format(table)
-        curs.execute(del_sql, [project_name])
+        if 'user_details' != table:
+            logger.info(f"Now deleting from {table}")
+            del_sql = """delete from pieval.{} where project_name = ?""".format(table)
+            curs.execute(del_sql, [project_name])
+        else:
+            logger.info(f"NOT deleting data from {table}")
     curs.commit()
     curs.close()
     con.close()

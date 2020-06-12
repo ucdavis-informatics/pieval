@@ -49,9 +49,11 @@ def get_db_connection(config):
         logger.info("Getting secrets from vault")
         #vaultClient = hvac.Client(url=config.VAULT_SERVER)
         vaultClient = piesafe.init_vault(None,
-                                         vault_server=config.VAULT_SERVER,
-                                         vault_role_id=config.VAULT_ROLE_ID,
-                                         vault_secret_id=config.VAULT_SECRET_ID)
+                                         vault_token=config.VAULT_TOKEN,
+                                         vault_server=config.VAULT_SERVER
+                                         # vault_role_id=config.VAULT_ROLE_ID,
+                                         # vault_secret_id=config.VAULT_SECRET_ID
+                                         )
 
         pieval_secret = vaultClient.read(config.DATASOURCE_LOCATION)
         logger.info("creating sqlalchemy engine")
