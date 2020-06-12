@@ -2,6 +2,7 @@ import sqlalchemy
 import urllib
 import logging
 from piesafe import piesafe
+import datetime
 piesafe.init_logging('example_log/setup')
 logger = logging.getLogger(__name__)
 
@@ -80,18 +81,32 @@ def create_backup(pieval_engine, metadata):
     con = pieval_engine.raw_connection()
     curs = con.cursor()
     for table,_ in metadata.table_dict.items():
-        try:
-            drop_sql = """drop table pieval_backup.{}""".format(table)
-            curs.execute(drop_sql)
-        except Exception as e:
-            logger.error("There was an error dropping the table!!")
-            logger.error(e)
-        try:
-            ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
-            curs.execute(ins_sql)
-            curs.commit()
-        except Exception as e:
-            logger.error("There was a problem backing up the table!!")
-            logger.error(e)
+        if 'annotation_events' == table:
+            logger.info("Handling annotation events special")
+            # create a custom backup, with timestamp in the name
+            bu_table = 'ae_'+datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+            try:
+                ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(bu_table, table)
+                curs.execute(ins_sql)
+                curs.commit()
+            except Exception as e:
+                logger.error("There was a problem backing up the table!!")
+                logger.error(e)
+        else:
+            logger.info("Standard table, drop from backup schema, and reload to backup schema")
+            try:
+                drop_sql = """drop table pieval_backup.{}""".format(table)
+                curs.execute(drop_sql)
+            except Exception as e:
+                logger.error("There was an error dropping the table!!")
+                logger.error(e)
+            try:
+                ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
+                curs.execute(ins_sql)
+                curs.commit()
+            except Exception as e:
+                logger.error("There was a problem backing up the table!!")
+                logger.error(e)
     curs.close()
     con.close()
+

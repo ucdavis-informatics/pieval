@@ -95,6 +95,7 @@ def create_project(data_table, classes_table, proj_desc, proj_mode, user_list):
         if proj_mode == 'multiclass':
             logger.info("Writting classed to db")
             insert_classes(pieval_engine, classes)
+        logger.info("Project loading complete!")
     else:
         logger.info("You decided to halt insert...quitting")
         sys.exit()
