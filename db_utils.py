@@ -86,22 +86,22 @@ def create_backup(pieval_engine, metadata):
             # create a custom backup, with timestamp in the name
             bu_table = 'ae_'+datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
             try:
-                ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(bu_table, table)
+                ins_sql = f"select * into pieval_backup.{bu_table} from pieval.{table}"
                 curs.execute(ins_sql)
                 curs.commit()
             except Exception as e:
                 logger.error("There was a problem backing up the table!!")
                 logger.error(e)
         else:
-            logger.info("Standard table, drop from backup schema, and reload to backup schema")
+            logger.info(f"Standard table: {table}, drop from backup schema, and reload to backup schema")
             try:
-                drop_sql = """drop table pieval_backup.{}""".format(table)
+                drop_sql = f"drop table pieval_backup.{table}"
                 curs.execute(drop_sql)
             except Exception as e:
                 logger.error("There was an error dropping the table!!")
                 logger.error(e)
             try:
-                ins_sql = """select * into pieval_backup.{} from pieval.{}""".format(table,table)
+                ins_sql = f"select * into pieval_backup.{table} from pieval.{table}"
                 curs.execute(ins_sql)
                 curs.commit()
             except Exception as e:
