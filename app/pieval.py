@@ -3,77 +3,36 @@ index.py - main app module for pieval.  Will put user on home page
 '''
 # Imports
 from flask import (
-    Blueprint, url_for, render_template, session, request, redirect, flash
+    Blueprint, url_for, render_template, session, request, redirect, flash, current_app
 )
 import pandas as pd
 from datetime import datetime
 from random import shuffle
 import logging
-from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
-# auth imports
-from flask_oidc import OpenIDConnect
 
 # siblings
 from app.data_loader import (
-    FileDataLoader, DBDataLoader, InvalidVaultTokenError
+    InvalidVaultTokenError, get_data_loader
 )
+from app.auth import logged_in
 
-# define the app
-from app import app
-#from app import scheduler
-# wrap app in auth
-oidc = OpenIDConnect(app)
+pv_dl = None
 
 bp = Blueprint('pieval', __name__, static_folder='static')
 ##########################################################################
 # app environ
 # variables/dataloader/logger
 ##########################################################################
-logger = logging.getLogger()
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-logger.setLevel(logging.DEBUG)
-
-fh = TimedRotatingFileHandler(app.config['LOGFILE_LOCATION'], when="midnight", interval=1, encoding='utf8')
-fh.suffix = "%Y-%m-%d"
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
-ch = logging.StreamHandler()
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-# construct data loader based on env file
-# consider using flask-sqlalchemy.  This is app scoped not sessio managed
-# >may< not scale.  Tested with 3 concurrent users and all things fine
-if app.config['DATASOURCE_TYPE'] == 'file':
-    pv_dl = FileDataLoader(app.config['DATASOURCE_LOCATION'], logger)
-elif app.config['DATASOURCE_TYPE'] == 'db':
-    pv_dl = DBDataLoader(app.config['VAULT_ROLE_ID'],
-                         app.config['VAULT_SECRET_ID'],
-                         app.config['VAULT_SERVER'],
-                         app.config['DATASOURCE_LOCATION'],
-                         app.config['DB_SCHEMA'],
-                         logger)
-
+logger = logging.getLogger(__name__)
 
 ################################################################
 # Functions
 ################################################################
-# build a logged in decorator to avoid duplicating login code...
-def logged_in(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get('logged_in'):
-            return f(*args, **kwargs)
-        else:
-            flash('Please log in first.')
-            return redirect(url_for('pieval.login'))
-    return decorated_function
-
-
 def checkAuthZ(project_name, user_name):
     try:
+        # if pv_dl is None:
+        #     pv_dl = get_data_loader()
         user_proj_list = pv_dl.getProjectUsers()[user_name]
     except InvalidVaultTokenError:
         return render_template('bad_vault_token.html')
@@ -83,48 +42,24 @@ def checkAuthZ(project_name, user_name):
 def list_diff(l1, l2):
     return list(set(l1) - set(l2))
 
+def init_pv_dl(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None):
+    global pv_dl
+    pv_dl = get_data_loader(type, path,
+                            v_role_id=v_role_id,
+                            v_sec_id=v_sec_id,
+                            v_server=v_server,
+                            db_schema=db_schema)
 
 ####################################################################
 # web events
 ####################################################################
-@bp.route('/login')
-@oidc.require_login
-def login():
-    logger.debug(f"Entry to login func session: {session}")
-    if oidc.user_loggedin:
-        session['user_name'] = oidc.user_getfield('preferred_username')
-        session['user_groups'] = oidc.user_getfield('groups')
-        session['logged_in'] = True
-        logger.debug(f"After OIDC param updates to session: {session}")
-        return redirect(url_for('pieval.pievalIndex'))
-    else:
-        return render_template('user_not_found.html')
-
-
-@bp.route('/logout')
-def logout():
-    if session.get('logged_in'):
-        session.pop('logged_in')
-    if session.get('user_name'):
-        session.pop('user_name')
-    if session.get('example_order'):
-        session.pop('example_order')
-    if session.get('cur_example'):
-        session.pop('cur_example')
-    oidc.logout()
-    # should be as simple as:
-    # return redirect(url_for('pievalIndex'))
-    # but due to flask-oidc bug it needs to be
-    return redirect(oidc.client_secrets.get('issuer')+'/protocol/openid-connect/logout?redirect_uri='+request.host_url+'pieval')
-
-
 @bp.route("/")
 @logged_in
 def pievalIndex():
     if not session.get('logged_in'):
         # if not logged in
         # return render_template('login.html')
-        redirect(url_for('pieval.login'))
+        redirect(url_for('auth.login'))
     else:
         # user is logged in
         # user is returning to index, possibly after annotating
@@ -137,6 +72,8 @@ def pievalIndex():
         logger.debug(f'Index session var is {session}')
         # get all projects for user
         try:
+            # if pv_dl is None:
+            #     pv_dl = get_data_loader()
             pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
             data = pv_dl.getProjectData(return_as_dataframe=True)
             prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
@@ -185,6 +122,8 @@ def project(project_name=None):
         if checkAuthZ(project_name, session['user_name']):
             # get project metadata
             try:
+                # if pv_dl is None:
+                #     pv_dl = get_data_loader()
                 project_metadata = pv_dl.getProjectMetadata(project_name)
                 logger.debug(f'In project() function project metadata is: {project_metadata}')
                 # get all records for project and use it to set an order variable in the users session
@@ -251,6 +190,8 @@ def annotate_example(doh='no'):
                 session['cur_example'] = session['prev_example']
                 session['example_order'] = session['example_order'] + [session['cur_example']]
                 try:
+                    # if pv_dl is None:
+                    #     pv_dl = get_data_loader()
                     one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
                     # remove existing annotation from database, before re-adding
                     pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
@@ -268,6 +209,8 @@ def annotate_example(doh='no'):
             session['cur_example'] = example_idx
             logger.debug(f"In annotate_example() session: {session}")
             try:
+                # if pv_dl is None:
+                #     pv_dl = get_data_loader()
                 one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token.html')
@@ -287,6 +230,8 @@ def get_multiclass_annotation(context_viewed='no'):
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # get current example
         try:
+            # if pv_dl is None:
+            #     pv_dl = get_data_loader()
             one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
             logger.debug(f"In get_multiclass_annotation() one_example = {one_example}")
             # get project classes
@@ -324,6 +269,8 @@ def record_annotation():
         else:
             # transact annotation event to persistence layer
             try:
+                # if pv_dl is None:
+                #     pv_dl = get_data_loader()
                 # record annotation
                 pv_dl.saveAnnot(cur_time,
                           cur_proj,

@@ -188,7 +188,6 @@ vault write -force auth/approle/role/pieval_role/secret-id
 ---
 
 ### Cloning/Building the project
-Building the environment is a little different than using pipenv.
 Clone the repo.  Obtain clone URL from [HERE](https://gitlab.ri.ucdavis.edu/ri/pydatautils/pieval):
 ```sh
 git clone <git url>
@@ -313,7 +312,7 @@ python run.py
 
 ```sh
 # Run App using gunicorn that more closely matches the deployment environment
-gunicorn -w 4 -b 127.0.0.1:5001 app:app
+gunicorn -w 4 -b 127.0.0.1:5001 "wsgi:create_app()"
 ```
 
 - Access app by URL - by default app launches on localhost:5001
@@ -343,7 +342,7 @@ Running the app:
 ```sh
 # Note only binding 127.0.0.1 - makes app localhost only and ensures the only external access path
 # will be through apache, which enforces https
-pipenv run gunicorn -w 4 -b 127.0.0.1:5001 app:app
+pipenv run gunicorn -w 4 -b 127.0.0.1:5001 "wsgi:create_app()"
 ```
 
 Basic puppet config to run app at '/pieval':

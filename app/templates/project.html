@@ -10,7 +10,7 @@
 <body>
   <div class="topnav">
     <a href = {{ url_for('pieval.pievalIndex') }} onmouseover="changeClass">Project Index</a>
-    <a class="right" href= {{ url_for('pieval.logout') }} onmouseover="changeClass">Logout</a>
+    <a class="right" href= {{ url_for('auth.logout') }} onmouseover="changeClass">Logout</a>
   </div>
   <div class="center_container">
     <h2>Project: '{{ project_metadata.project_name }}'</h2>

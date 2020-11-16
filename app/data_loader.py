@@ -10,6 +10,10 @@ import sqlalchemy
 import urllib
 import hvac
 from piesafe import piesafe
+from flask import current_app
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 #########################################################################
@@ -51,6 +55,45 @@ def getMSSQLEngine(inDriver, inServer, inDb, inUsername, inPassword):
     MSSQLEngine = sqlalchemy.create_engine('mssql+pyodbc:///?odbc_connect=%s' % conString)
     return MSSQLEngine
 
+
+def get_data_loader(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None):
+    # construct data loader based on env file
+    # consider using flask-sqlalchemy.  This is app scoped not sessio managed
+    # >may< not scale.  Tested with 3 concurrent users and all things fine
+    print(f"Obtaining a PieVal Data Loader with type {type}")
+    if type == 'file':
+        pv_dl = FileDataLoader(path, logger)
+    elif type == 'db':
+        pv_dl = DBDataLoader(v_role_id,
+                            v_sec_id,
+                            v_server,
+                            path,
+                            db_schema,
+                            logger)
+    else:
+        pv_dl = None
+
+    return pv_dl
+
+
+# def get_data_loader():
+#     # construct data loader based on env file
+#     # consider using flask-sqlalchemy.  This is app scoped not sessio managed
+#     # >may< not scale.  Tested with 3 concurrent users and all things fine
+#     print(f"Obtaining a PieVal Data Loader with type {current_app.config['DATASOURCE_TYPE']}")
+#     if current_app.config['DATASOURCE_TYPE'] == 'file':
+#         pv_dl = FileDataLoader(current_app.config['DATASOURCE_LOCATION'], logger)
+#     elif current_app.config['DATASOURCE_TYPE'] == 'db':
+#         pv_dl = DBDataLoader(current_app.config['VAULT_ROLE_ID'],
+#                             current_app.config['VAULT_SECRET_ID'],
+#                             current_app.config['VAULT_SERVER'],
+#                             current_app.config['DATASOURCE_LOCATION'],
+#                             current_app.config['DB_SCHEMA'],
+#                             logger)
+#     else:
+#         pv_dl = None
+
+#     return pv_dl
 
 ################################################################
 # classes

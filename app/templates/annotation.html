@@ -29,7 +29,7 @@
     {% if 'prev_example' in session.keys() %}
     <a href = {{ url_for('pieval.annotate_example', doh='yes') }} onmouseover="changeClass">Doh!</a>
     {% endif %}
-    <a class="right" href= {{ url_for('pieval.logout') }} onmouseover="changeClass">Logout</a>
+    <a class="right" href= {{ url_for('auth.logout') }} onmouseover="changeClass">Logout</a>
   </div>
 
   <p><b>Prompt: </b>{{ one_example.prompt }}</p>
