@@ -12,103 +12,27 @@ import hvac
 from piesafe import piesafe
 from flask import current_app
 import logging
-
-logger = logging.getLogger(__name__)
-
-
-#########################################################################
-# functions
-#########################################################################
-def getOraDBEngine(inUsername, inPassword, inURL):
-    '''
-    Returns sqlalchemy database engine, specific to database type
-    Oracle and MSSQL only current supported platforms
-    '''
-    ORAEngineConString = 'oracle+cx_oracle://{}:{}@{}'.format(inUsername,
-                                                              inPassword,
-                                                              inURL)
-    ORAEngine = sqlalchemy.create_engine(ORAEngineConString, pool_size=100)
-
-    # update NLS format for this session
-    O_CON = ORAEngine.raw_connection()
-    O_CURSOR = O_CON.cursor()
-    O_CURSOR.execute("ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'")
-
-    return ORAEngine
-
-
-def getMSSQLEngine(inDriver, inServer, inDb, inUsername, inPassword):
-    # Setting up connection string using params:
-    # Adding PORT seems to make no difference
-    # 'PORT=' + myPort + ';' \
-    conString = 'DRIVER=' + inDriver + ';' \
-            'SERVER=' + inServer + ';' \
-            'DATABASE=' + inDb + ';' \
-            'UID=' + inUsername + ';' \
-            'PWD=' + inPassword + ';' \
-            'Trusted_Connection=No;'
-
-    # URL encode the connection string
-    conString = urllib.parse.quote_plus(conString)
-
-    # Create the connection engine object
-    MSSQLEngine = sqlalchemy.create_engine('mssql+pyodbc:///?odbc_connect=%s' % conString)
-    return MSSQLEngine
-
-
-def get_data_loader(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None):
-    # construct data loader based on env file
-    # consider using flask-sqlalchemy.  This is app scoped not sessio managed
-    # >may< not scale.  Tested with 3 concurrent users and all things fine
-    print(f"Obtaining a PieVal Data Loader with type {type}")
-    if type == 'file':
-        pv_dl = FileDataLoader(path, logger)
-    elif type == 'db':
-        pv_dl = DBDataLoader(v_role_id,
-                            v_sec_id,
-                            v_server,
-                            path,
-                            db_schema,
-                            logger)
-    else:
-        pv_dl = None
-
-    return pv_dl
-
-
-# def get_data_loader():
-#     # construct data loader based on env file
-#     # consider using flask-sqlalchemy.  This is app scoped not sessio managed
-#     # >may< not scale.  Tested with 3 concurrent users and all things fine
-#     print(f"Obtaining a PieVal Data Loader with type {current_app.config['DATASOURCE_TYPE']}")
-#     if current_app.config['DATASOURCE_TYPE'] == 'file':
-#         pv_dl = FileDataLoader(current_app.config['DATASOURCE_LOCATION'], logger)
-#     elif current_app.config['DATASOURCE_TYPE'] == 'db':
-#         pv_dl = DBDataLoader(current_app.config['VAULT_ROLE_ID'],
-#                             current_app.config['VAULT_SECRET_ID'],
-#                             current_app.config['VAULT_SERVER'],
-#                             current_app.config['DATASOURCE_LOCATION'],
-#                             current_app.config['DB_SCHEMA'],
-#                             logger)
-#     else:
-#         pv_dl = None
-
-#     return pv_dl
+import ucdripydbutils
 
 ################################################################
 # classes
 ################################################################
+## #################
+# Custom Exception Classes
+## #################
 class InvalidVaultTokenError(Exception):
     """Raised when token doesn't authenticate to vault."""
     pass
 
-
+## #################
+# Data Loader Classes
+## #################
 class FileDataLoader(object):
-    '''
+    """
     Data loader class for pieval, assuming csv file based backend.
     This backend is best for devlopment and fast prototyping
     Consider DBDataLoader for production systems
-    '''
+    """
 
     def __init__(self, database_dir='database/', logger=None):
         self.database_dir = database_dir
@@ -238,17 +162,17 @@ class DBDataLoader(object):
                 self.logger.info("Creating Oracle Database Engine")
             pievalUser = pieval_secret.get('data').get('username')
             pievalPass = pieval_secret.get('data').get('password')
-            pievalURL = pieval_secret.get('data').get('url')
-            pievalEngine = getOraDBEngine(pievalUser, pievalPass, pievalURL)
+            pievalURL = pieval_secret.get('data').get('tns')
+            pievalEngine = ucdripydbutils.getOraDBEngine(pievalUser, pievalPass, pievalURL)
         elif self.pieval_db_type == 'mssql':
             if self.logger:
                 self.logger.info("Creating MSSQL Database Engine")
             myUsername = pieval_secret.get('data').get('username')
             myPassword = pieval_secret.get('data').get('password')
-            myServer = pieval_secret.get('data').get('server')
+            myServer = pieval_secret.get('data').get('fqdn')
             myDriver = pieval_secret.get('data').get('driver')
             myDB = pieval_secret.get('data').get('db')
-            pievalEngine = getMSSQLEngine(myDriver, myServer, myDB,
+            pievalEngine = ucdripydbutils.getMSSQLEngine(myDriver, myServer, myDB,
                                           myUsername, myPassword)
         return pievalEngine
 
@@ -265,6 +189,7 @@ class DBDataLoader(object):
                 self.io_db_engine.dispose()
                 self.io_db_engine = self.createEngine()
         else:
+            self.logger.info("Creating DB Engine for the first time!")
             self.io_db_engine = self.createEngine()
 
     def getUserData(self, return_as_data_frame=False):
@@ -435,3 +360,26 @@ class DBDataLoader(object):
                 self.logger.error("Unsupported DB type!")
         O_CON.commit()
         O_CURSOR.close()
+
+
+#########################################################################
+# functions
+#########################################################################
+def get_data_loader(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
+    # construct data loader based on env file
+    # consider using flask-sqlalchemy.  This is app scoped not sessio managed
+    # >may< not scale.  Tested with 3 concurrent users and all things fine
+    logger.info(f"Obtaining a PieVal Data Loader with type {type}") if logger else print("No logger")
+    if type == 'file':
+        pv_dl = FileDataLoader(path, logger)
+    elif type == 'db':
+        pv_dl = DBDataLoader(v_role_id,
+                            v_sec_id,
+                            v_server,
+                            path,
+                            db_schema,
+                            logger)
+    else:
+        pv_dl = None
+
+    return pv_dl

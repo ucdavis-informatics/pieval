@@ -6,6 +6,22 @@ Original Author Date: 2019-01-13
 Current Status: Stable  
 Cur Status Date: 2019-05-29
 
+--- 
+
+# Project Status/TODOs
+Project is currently being re-worked to:
+- run in containers so it's easier to package
+- work on different types of data, notably images and table data
+
+## Reworking to package in containers
+There are at least 3, if not 4 technologies that add up to pieval:
+1. Python Flask
+1. Vault - kind of optional.  We could just put secrets in instance/config
+1. KeyCloak - Non-optional.  Acts as ID store abstraction layer.  future users can use KC directly OR link KC to IDp of their choosing
+  - I only intend to solve demo deployments by packaging with a KC docker image.  It will always be the intention to make it easy to demo but, running will necessarily take more effort
+
+---
+
 ## Background
 PieVal is the product of an idea, many work hours, a prototype in another language, and fairly extensive user testing.  And it's still growing.  The idea was a clever repurposing of common web app functionality seen in viral social apps like Tinder.  In these apps, users record their preferences with a quick swipe of the screen.  We wanted to bring that efficiency to data labeling efforts.  This work originated in a clinical setting in which data labelling has been prohibitively expensive, stunting the expanded use of machine learning.  Typically, data labelling efforts involves clinical experts reviewing data directly in an Electronic Medical Record, often taking minutes just to locate the data being reviewed, then entering their findings in a separate tool.  PieVal removes all of this complexity, placing the data and the response capture in a lightweight, distraction free UI.  Admittedly, this makes the annotation job set-up a bit more expensive.  However, that's concentrated as a one-time effort rather than forcing each annotator to pay the cost over and over.
 
@@ -17,8 +33,6 @@ Copy: PieVal, combining the words Python and Validation, is a web-based, secure,
 
 ## About the Author(s)
 Bill Riedl has been building applications for secondary use of clinical data since 2009 as a graduate student researcher in clinical informatics.  Since graduating in 2011, he has held a variety of roles with UC Davis Health, working in clinical domains focused on chronic disease registries, to modelling high volume, high throughput ICU data, to most recently building precision medicine tools for cancer.  Bill specializes in Natural Language Processing, Time Series analysis, data standards and API's, as well as a little web application development.
-
-
 
 ### Contributors
 Bill Riedl: Idea guy / Lead dev  
@@ -36,7 +50,8 @@ Cy Huynh: Logo Developer
 - Built in enrichment strategy testing.  By default present the user a clipped, enriched, or otherwise modified version of the data designed to improve both the annotation and downstream ML process.  But, save the unmodified data and present it IF the annotator asks for it.  The ask is recorded with the annotation.  This allows you measure the effectiveness of enrichment strategies.
 - Easy configuration to set up annotation quality with both IntrA and IntER operator agreement statistics
 - Annotation compliance - system can be configured to send reminder emails to keep people engaged without you having to lift a finger.
-___
+
+---
 
 ## Technical Deets
 Python version: 3.6.x (3.6.9 for development)  
@@ -237,6 +252,11 @@ To have build_sql_database.py build OR update the tables for you:
 pipenv run python build_sql_database.py --keep_example_data yes --build_or_update build
 ```
 
+We built on top of two technologies we really like.  This disclaimer is to let you know we recognize this could make it hard to get this code running in your environment.  We use:
+1. [KeyCloak](https://www.keycloak.org) - for Authentication
+1. [Vault](https://www.vaultproject.io) - for Secret management
+Both technologies are open source and we cannot recommend them enough.  Having said that, if you are unable to run them in your environment, you will have to make some code changes and some config changes before this code will run.
+
 ---
 
 ## Generating your own data for pieval
@@ -288,62 +308,51 @@ $ python delete_project.py -pn aml_bone_marrow_results
 ---
 
 ### Running the app
-**NOTE:  There are pre-reqs to running this app locally, without them it will not work.  They are:**
-1. keycloak - The keycloak service must be running, configured to accept this app as a client, and you must have network connectivity to it.
+This app runs in 2 modes:
+1. Dev/Demo - runs the minimal 'complete' environment that allows for development work as well as easy out of the box demonstrations.  Notably, when running in Dev mode, the app assumes you will be using the csv file based persistance strategy, not connecting to a database.  This allows to avoid worrying about both running a DB and accessing the secrets to sign into it.  Dev Mode runs:
+  - PieVal app - as a container
+  - KeyCloak - as a container that is loaded with the minimal security configuration for the service to support PieVal with Auth.  This is NOT secure.  It is intended to give you a feel for how security works in the platform.  This also means we did not need to implement an auth layer togggle switch OR guranateed that a fully baked keycloak service is running simply to demo/develop on the tool.  
+1. Production - Runs only the PieVal application as a container.  It is assumed you have a fully baked:
+  - KeyCloak instance
+  - Vault instance - for retrieving database secrets.  **NOTE:** You could alter the codebase to simply draw the db secrets from instance/config.py, where other secrets are already kept.
+  - Database [oracle|mssql]  
 
-Assuming you meet the above requirements, you can run the app locally! It is best to start by using the example database that comes packaged in the repo.  If you set DATASOURCE_TYPE = 'file' and DATASOURCE_LOCATION = 'example_database/' in your instance/config.py file then the app will launch using the example data provide with the code.  You will need to modify the example_database/project_users.csv file and add an entry giving your username access to one or more of the demo projects.
 
-If you want to run the app against a database locally, it adds another pre-req.  You must have a database you control and previously built the pieval schema.  If you plan to use this code out of the box, you must also be running Vault and update instance/config.py with the correct vault information.  In the absence of vault, you must modify instance/config.py as well as some of the source code to instead pull database secrets/parameters from the config file.
+Run mode is toggled in instance/config.py.  Find the block near the top and modify...
+config.py is also how you wire the app up to either the demo services or the production services
+use demo_config.py
 
 
-- Activate the venv (don't redo if already activated from building the app)  
-
-```sh
-pipenv shell
-```
-
-- Run App in Development Mode
-```sh
-# Using development server with auto-reload
-python run.py
-```
-
-- OR Run App in production Mode with gunicorn
+#### Launching the app
+Directly on your hardware:  
 
 ```sh
-# Run App using gunicorn that more closely matches the deployment environment
-gunicorn -w 4 -b 127.0.0.1:5001 "wsgi:create_app()"
+# This runs the code with reload set to true such that code changes can be tested quickly
+pipenv run python run.py
 ```
 
-- Access app by URL - by default app launches on localhost:5001
-  - Local development [localhost:5001](http://localhost:5001)
-  - Production - depends on deployment specific factors
+```sh
+# This runs the code in the same way it will be run in production
+pipenv run gunicorn --timeout 1000 -w 4 -b 127.0.0.1:5001 "run:create_app()"
+```
+
+Running on Docker:  
+```sh
+# build the image
+docker build -t ariedl/pieval:v1.0.0 .
+```
+
+```sh
+docker run --name pieval --mount source="$(pwd)",target=/pieval,type=bind -p 5001:5001 ariedl/pieval:v1.0.0 gunicorn --timeout 1000 -w 4 -b 0.0.0.0:5001 "run:create_app()" 
+```
+
+- Access app by URL - [localhost:5001](http://localhost:5001)
 
 
-
-#### App Sessions
-While the app is running, it makes heavy use of the session variable, a dictionary for holding stateful content.  This app manages these session variables
-1. logged_in - bool indicating whether logged in or not
-1. user_name - contains unique id for current user.  After shib'd, this entry will hold the REMOTE_USER variable
-1. cur_proj - unique name of current active project
-1. project_mode - binary or multi-class, alters behavior when saving annotations
-1. example_order - a list of integers, where each integer uniquely identifies an example from the current project
-1. cur_example - a single integer, containing the current active example id in this users session
-1. prev_example - a single integer, containing the previous example annotated.  Used to allow for 'Doh!' functionality
-
----
-
-### Deploying/Running the app on a server
+### Deploying for production
 Pieval is deployed on gunicorn python app server proxied by Apache.  In this deployment method, pieval must be running on gunicorn binding a localhost port/sub-url.  Apache must be configured to accept web requests and proxy them to the application.  Apache also enforces 'https'.
 1. Gunicorn - app container
 1. Apache - web server wich accepts web requests and proxies to Gunicorn
-
-Running the app:  
-```sh
-# Note only binding 127.0.0.1 - makes app localhost only and ensures the only external access path
-# will be through apache, which enforces https
-pipenv run gunicorn -w 4 -b 127.0.0.1:5001 "wsgi:create_app()"
-```
 
 Basic puppet config to run app at '/pieval':
 ```yaml
@@ -355,24 +364,22 @@ proxy_pass:
       - 'http://localhost:5001/pieval'
 ```
 
+The URL to access the app once deployed on a server will be dependent on your hostname and other decistions you may have made.
+
+---
+
+#### App Sessions
+While the app is running, it makes heavy use of the session variable, a dictionary for holding stateful content.  This app manages these session variables
+1. logged_in - bool indicating whether logged in or not
+1. user_name - contains unique id for current user.  After shib'd, this entry will hold the REMOTE_USER variable
+1. cur_proj - unique name of current active project
+1. project_mode - binary or multi-class, alters behavior when saving annotations
+1. example_order - a list of integers, where each integer uniquely identifies an example from the current project
+1. cur_example - a single integer, containing the current active example id in this users session
+1. prev_example - a single integer, containing the previous example annotated.  Used to allow for 'Doh!' functionality
+
 ### Background Tasks
 Using the [Flask AP Scheduler](https://github.com/viniciuschiele/flask-apscheduler) some helpful background tasks are triggered:
 1. Renew Vault approle token - Without any utilization the approle tokens expire every 192 hours.  This triggered task renews the token every 13 hours to prevent the approle token from expiring
 1. Send Reminder Emails - If configured, this task will send emails (only M-F at 0900) to all system users that have exceeded the configurable number of days since recording an annotation while they have active projects.  Helpful for annotation compliance.
 
-
-### Running the App disclaimers
-We built on top of two technologies we really like.  This disclaimer is to let you know we recognize this could make it hard to get this code running in your environment.  We use:
-1. [KeyCloak](https://www.keycloak.org) - for Authentication
-1. [Vault](https://www.vaultproject.io) - for Secret management
-Both technologies are open source and we cannot recommend them enough.  Having said that, if you are unable to run them in your environment, you will have to make some code changes and some config changes before this code will run.
-
-We are working on adding a flag that allows the app to run without an auth provider.  This will allow you to test the app in a prototype environment before committing to understanding/implementing AUTH.  Beyond this, we are leaving the task of integrating Auth to you.  It will vary wildly based on local resources and vibe.
-
-Divesting from vault shouldn't be too hard.  Pieval accesses Database connection information like host, port, database, username, and password from vault.  All of this happens in app/data_loader.py.  You could divest by instead putting all of the relevant DB connection details in instance/config.py, then referencing/using them appropriately in the data loader. 
-
-#### Apache and mod_wsgi
-This is not recommended.  It requires using the same python version as mod_wsgi was compiled for.  Instead we recommend using a wsgi container like Gunicorn, covered above.
-Since this project is using a virtual env, we need to tell mod_wsgi where to get the correct python version and project packages.  These settings should go somewhere in the Apache config for this app.  These also need mods if not cloned/built in /var/www
-WSGIPythonHome /var/www/pieval/venv/bin/python
-WSGIPythonPath /var/www/pieval/venv/lib/python3.6/site-packages

@@ -1,0 +1,16 @@
+{
+    "username": "pieval",
+    "credentials":[{"type":"password", "secretData":"pieval", "value":"pieval"}],
+    "enabled": true,
+    "totp": false,
+    "emailVerified": false,
+    "firstName": "pie",
+    "lastName": "val",
+    "disableableCredentialTypes": [],
+    "requiredActions": [],
+    "notBefore": 0,
+    "access": {"manageGroupMembership": true,
+     "view": true,
+     "mapRoles": true,
+     "impersonate": true,
+     "manage": true}}

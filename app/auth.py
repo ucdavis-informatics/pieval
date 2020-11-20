@@ -34,7 +34,7 @@ from flask import Blueprint, redirect, url_for, session, current_app, request, r
 from flask_oidc import OpenIDConnect
 
 # get a handle to the logger
-logger = logging.getLogger(__name__)
+logger = None
 
 # register this blueprint...and fudge here a little bit because we are assuming
 # that this blueprint lives under the main dashboard prefix...flask doesn't
@@ -43,6 +43,9 @@ bp = Blueprint("auth", __name__)
 # initialize the Flask OIDC extension
 oidc = OpenIDConnect()
 
+def init_logging(logger_name):
+    global logger
+    logger = logging.getLogger(logger_name)
 
 # build a logged in decorator to avoid duplicating login code...
 def logged_in(f):

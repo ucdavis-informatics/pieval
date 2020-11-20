@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c899fe254fb3dea5233ddfb09777c4481d68fc63c67a121108d8d1b9443ef853"
+            "sha256": "3bcbd136c6d0641fcf888042b951d27351382e24237bdeb4225ad43125c707ed"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -215,11 +215,11 @@
         },
         "jupyter-core": {
             "hashes": [
-                "sha256:394fd5dd787e7c8861741880bdf8a00ce39f95de5d18e579c74b882522219e7e",
-                "sha256:a4ee613c060fe5697d913416fc9d553599c05e4492d58fac1192c9a6844abb21"
+                "sha256:0a451c9b295e4db772bdd8d06f2f1eb31caeec0e81fbb77ba37d4a3024e3b315",
+                "sha256:aa1f9496ab3abe72da4efe0daab0cb2233997914581f9a071e07498c6add8ed3"
             ],
             "index": "pypi",
-            "version": "==4.6.3"
+            "version": "==4.7.0"
         },
         "markupsafe": {
             "hashes": [
@@ -638,6 +638,13 @@
                 "sha256:e2cb6c6b5b604af38597403e9852872d7f534962ae2954c7f35efcb1ccacf4a4"
             ],
             "version": "==2.1"
+        },
+        "ucd-ri-pydbutils": {
+            "hashes": [
+                "sha256:838fafa7ec510addb53d0cdfc09b62b008060a6e50460817c0f3302b4afbe382"
+            ],
+            "index": "pypi",
+            "version": "==1.6.4"
         },
         "urllib3": {
             "hashes": [

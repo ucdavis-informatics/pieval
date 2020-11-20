@@ -6,7 +6,7 @@
 __pycache__/
 venv/
 */config.py
-*/client_secrets.json
+*/client_secrets*.json
 local*
 *.pyc
 .idea/

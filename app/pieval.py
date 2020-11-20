@@ -18,37 +18,38 @@ from app.data_loader import (
 from app.auth import logged_in
 
 pv_dl = None
+logger = None
 
 bp = Blueprint('pieval', __name__, static_folder='static')
 ##########################################################################
-# app environ
+# app init funcs
 # variables/dataloader/logger
 ##########################################################################
-logger = logging.getLogger(__name__)
+def init_pv_dl(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
+    global pv_dl
+    pv_dl = get_data_loader(type, path,
+                            v_role_id=v_role_id,
+                            v_sec_id=v_sec_id,
+                            v_server=v_server,
+                            db_schema=db_schema,
+                            logger=logger)
+
+def init_logging(logger_name):
+    global logger
+    logger = logging.getLogger(logger_name)
 
 ################################################################
 # Functions
 ################################################################
 def checkAuthZ(project_name, user_name):
     try:
-        # if pv_dl is None:
-        #     pv_dl = get_data_loader()
         user_proj_list = pv_dl.getProjectUsers()[user_name]
     except InvalidVaultTokenError:
         return render_template('bad_vault_token.html')
     return True if project_name in user_proj_list else False
 
-
 def list_diff(l1, l2):
     return list(set(l1) - set(l2))
-
-def init_pv_dl(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None):
-    global pv_dl
-    pv_dl = get_data_loader(type, path,
-                            v_role_id=v_role_id,
-                            v_sec_id=v_sec_id,
-                            v_server=v_server,
-                            db_schema=db_schema)
 
 ####################################################################
 # web events
@@ -72,8 +73,6 @@ def pievalIndex():
         logger.debug(f'Index session var is {session}')
         # get all projects for user
         try:
-            # if pv_dl is None:
-            #     pv_dl = get_data_loader()
             pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
             data = pv_dl.getProjectData(return_as_dataframe=True)
             prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
@@ -122,8 +121,6 @@ def project(project_name=None):
         if checkAuthZ(project_name, session['user_name']):
             # get project metadata
             try:
-                # if pv_dl is None:
-                #     pv_dl = get_data_loader()
                 project_metadata = pv_dl.getProjectMetadata(project_name)
                 logger.debug(f'In project() function project metadata is: {project_metadata}')
                 # get all records for project and use it to set an order variable in the users session
@@ -190,8 +187,6 @@ def annotate_example(doh='no'):
                 session['cur_example'] = session['prev_example']
                 session['example_order'] = session['example_order'] + [session['cur_example']]
                 try:
-                    # if pv_dl is None:
-                    #     pv_dl = get_data_loader()
                     one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
                     # remove existing annotation from database, before re-adding
                     pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
@@ -209,8 +204,6 @@ def annotate_example(doh='no'):
             session['cur_example'] = example_idx
             logger.debug(f"In annotate_example() session: {session}")
             try:
-                # if pv_dl is None:
-                #     pv_dl = get_data_loader()
                 one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token.html')
@@ -230,8 +223,6 @@ def get_multiclass_annotation(context_viewed='no'):
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # get current example
         try:
-            # if pv_dl is None:
-            #     pv_dl = get_data_loader()
             one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
             logger.debug(f"In get_multiclass_annotation() one_example = {one_example}")
             # get project classes

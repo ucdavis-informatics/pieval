@@ -3,12 +3,10 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
-
 [[source]]
 url = "https://repos.ri.ucdavis.edu/python"
 verify_ssl = true
 name = "ripy"
-
 
 [dev-packages]
 autopep8 = "*"
@@ -64,6 +62,7 @@ funcy = "*"
 flask-apscheduler = "*"
 python-dotenv = "*"
 piesafe = "*"
+ucd-ri-pydbutils = "*"
 
 [requires]
 python_version = "3.6"
