@@ -34,7 +34,7 @@ def create_app():
     logger.info("Registerting blueprints")
     app.register_blueprint(pieval.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
     app.register_blueprint(auth.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
-    app.secret_key = app.config['PIEVAL_SECRET_KEY']
+    app.secret_key = app.config['SECRET_KEY']
 
     # initialize logger(s) in app files with logger name so they all get a handle to the same logger
     logger.info("Initializing logging in each module")

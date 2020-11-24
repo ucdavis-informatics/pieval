@@ -61,144 +61,19 @@ Auth: Keycloak
 Persistence Architecture: filesystem(dev only) or RDBMS (tested on ora or mssql)
 Secrets Management: Vault.  With modification, the app could be convinced to obtain all secrets from config.py (see below) if Vault is not available to you.
 
+We built on top of two technologies we really like.  This disclaimer is to let you know we recognize this could make it hard to get this code running in your environment.  We use:
+1. [KeyCloak](https://www.keycloak.org) - for Authentication
+1. [Vault](https://www.vaultproject.io) - for Secret management
+Both technologies are open source and we cannot recommend them enough.  Having said that, if you are unable to run them in your environment, you will have to make some code changes and some config changes before this code will run.
+
 ### App Config
 All App config is housed in the instance/ directory.  There are 2 configuration files that must be present:
 1. config.py - contains app configuration
 1. client_secrets.json - referenced in config.py, contains keycloak auth configuration
 These files are NOT checked into the git repo because they may contain secrets.  These files are a pre-requisite to a working example.  Be sure to create them using these examples as reference:
-
 **NOTE:**  As you create these files be EXTREMELY careful about which environment you are connecting to, espeically if using a database as the persistence architecture.  This repo contains code that can overwrite an exisiting database schema.  If you trigger this during development against a non-development database you can lose data!
 
-```py
-#################
-# App config
-#################
-BLUEPRINT_URL_PREFIX = '/'  # commonly either '/' or '/pieval'
-HOST_FQDN='http://localhost:5001'  # varies.  This example is correct if running on localhost with '/' url prefix
-
-#################
-# data source config
-#################
-'''
-The persistence layer can be either filesystem (csv files) or and RDMBS database
-The file system approach is good for feature development but not appropriate for
-production deployments
-
-For dev deployments
-DATASOURCE_TYPE = 'file'
-DATASOURCE_LOCATION = 'example_database/'
-
-For prod deployments:
-- change DATASOURCE_TYPE = 'db'
-- change DATASOURCE_LOCATION to the vault path of your desired db
-Yes, the app is pretty bound to vault given this definition but, vault goodnees.  You should be using it...
-'''
-# DATASOURCE_TYPE = 'file'
-# DATASOURCE_LOCATION = 'example_database/'
-
-DATASOURCE_TYPE = 'db'
-DATASOURCE_LOCATION = 'cdi3/db/cdi3sql01/dev'
-
-# defaulted to pieval.
-# Change this is you want to place tables in a different schema
-# only relevant if DATASOURCE_TYPE == 'db'
-DB_SCHEMA = 'pieval'
-
-####################
-# logging config
-####################
-'''
-Logged locally for development
-Change this to any absolute path on the hosting filesystem (ensure r/w privs)
-to log elsewhere
-'''
-LOGFILE_LOCATION = 'example_log/flask_server.log'
-
-####################
-# secret config
-####################
-VAULT_SERVER = 'https://vault-ri.ucdmc.ucdavis.edu:8200'
-# VAULT_TOKEN = '<vault token>'  If not running as an approle with Vault, uncomment this line
-VAULT_ROLE_ID = '<role id>'
-VAULT_SECRET_ID = '<secret id>'
-VAULT_SECRET_ID_ACCESSOR = '<secret id accessor>'
-
-TOKEN_REFRESH = 13  # units match what's declared below for the job interval - Hours
-
-SECRET_KEY = '<super_secret_key>'
-
-
-####################
-# auth config
-####################
-# TESTING=True
-# DEBUG=True
-OIDC_CLIENT_SECRETS='instance/client_secrets.json'
-OIDC_ID_TOKEN_COOKIE_SECURE=False
-OIDC_REQUIRE_VERIFIED_EMAIL=False
-OIDC_USER_INFO_ENABLED=True
-OIDC_OPENID_REALM='cdi3'
-OIDC_SCOPES=['openid', 'email', 'profile']
-OIDC_INTROSPECTION_AUTH_METHOD='client_secret_post'
-
-
-# Background tasks
-# These jobs are executed by FlaskAPscheduler
-FROM_EMAIL = 'cdi3-tech@ucdavis.edu'
-IGNORE_SEND = True
-DAYS_TILL_PROMPT = 2
-JOBS = [
-        {
-            'id': 'annotation_reminder',
-            'func': 'send_reminders:send_reminders',
-            'trigger': 'cron',
-            'day_of_week': 'mon-fri',
-            'hour': '09'
-        },
-        {
-            'id': 'token_renew',
-            'func': 'renew_token:renew_token',
-            'trigger': 'interval',
-            'hours': TOKEN_REFRESH
-        }
-    ]
-
-```
-
-**client_secrets.json**  
-This is another secrets file, also in the instance/ folder that must be created for each deployment.  All values must be updated for your deployment.  It's structure is presented below:
-```json
-{
-    "web": {
-        "issuer": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3",
-        "auth_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/auth",
-        "client_id": "<Unique client id - defined in keycloak>",
-        "client_secret": "<unique key value here>",
-        "redirect_uris": [
-            "<url where app is hosted>"
-        ],
-        "userinfo_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/userinfo",
-        "token_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/token",
-        "token_introspection_uri": "https://kc01.ri.ucdavis.edu/auth/realms/CDI3/protocol/openid-connect/token/introspect"
-    }
-}
-```
----
-## Creating a Vault approle for pieval
-Create the approle
-```shell script
-vault write auth/approle/role/pieval_role policies="pieval_policy" period="192h"
-```
-
-Get the role id
-```shell script
-vault read auth/approle/role/pieval_role/role-id
-```
-
-Get the Secret id
-```shell script
-vault write -force auth/approle/role/pieval_role/secret-id
-```
+See README_example_config.md for an example config file
 
 ---
 
@@ -207,11 +82,6 @@ Clone the repo.  Obtain clone URL from [HERE](https://gitlab.ri.ucdavis.edu/ri/p
 ```sh
 git clone <git url>
 cd ucd-ri-pieval
-```
-
-Create pipenv
-```sh
-pipenv --python 3.6.9 install
 ```
 
 ---
@@ -252,11 +122,6 @@ To have build_sql_database.py build OR update the tables for you:
 pipenv run python build_sql_database.py --keep_example_data yes --build_or_update build
 ```
 
-We built on top of two technologies we really like.  This disclaimer is to let you know we recognize this could make it hard to get this code running in your environment.  We use:
-1. [KeyCloak](https://www.keycloak.org) - for Authentication
-1. [Vault](https://www.vaultproject.io) - for Secret management
-Both technologies are open source and we cannot recommend them enough.  Having said that, if you are unable to run them in your environment, you will have to make some code changes and some config changes before this code will run.
-
 ---
 
 ## Generating your own data for pieval
@@ -275,16 +140,19 @@ described in example_database/README.md for the project_data table, you can eith
 Assuming your using a backing database, this script will help you create a new project.  This is intened more for production applications.  In local development, editing the csv files in example database is so easy we won't build a script to manage them.
 
 You must first create a table in the pieval_stage schema, with the same columns as pieval.project_data, containing the data for the new project.  If your project is a multi-class project, then you must also create a table containing the project classes in the pieval_stage schema.  The you can run the create_project.py script to insert the new data into all the necessary tables.  It is a CLI script with a pretty well document api available here:
-```shell script
-# assumes pipenv is activated
-$ python create_project.py --help
-```
+
 A specific example here which creates a project from the staging table:  
   pieval_stage.aml_bm_blast_cycle1  
   with 2 users test1 and 2  
   with project description test project description
   with project mode binary
-  
+
+
+```shell script
+# assumes pipenv is activated
+$ python create_project.py --help
+```
+
 ```shell script
 # assumes pipenv is activated
 $ python create_project.py -dt aml_bm_blast_cycle1 -u awriedl -u jmcawood -pd "test project description" -pm binary

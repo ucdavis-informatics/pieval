@@ -7,9 +7,10 @@ Primary use-case:  Package keycloak with a containerized PieVal to make for a be
 [KC on Docker Quickstart](https://www.keycloak.org/getting-started/getting-started-docker)
 [KC Securing Apps](https://www.keycloak.org/docs/latest/securing_apps/)
 
+
 ```sh
 # start KC docker image with
-docker run --name pv_kc -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin -d quay.io/keycloak/keycloak:11.0.2
+docker run -d --network=host --name pv_kc -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin jboss/keycloak:11.0.2
 ```
 
 ### Necessary Configuration Steps

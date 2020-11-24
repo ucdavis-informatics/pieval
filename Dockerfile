@@ -23,6 +23,8 @@ ENV DEBIAN_FRONTEND=dialog
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+EXPOSE 5001
+
 # Itentionally not copying code into image
 # code will be mounted in the run command instead
 
