@@ -15,6 +15,15 @@ At the end of this in dev mode we will have:
     - pv_kc - keycloak instance - using container image from JBOSS
     - pv_client - debian linux with firefox and selenium installed.  Using image from Selenium.  This is nice because VNC jsut works but, I want this modded and don't really need selenium.  The way their image is russian dolled, its hard to add new things that just work...
 
+---
+## Running with compose
+```sh
+docker-compose --verbose up --force-recreate
+```
+
+--- 
+## Running Manually
+
 ### PRE-REQS Creating a docker network.  This only needs to happen once
 docker network create --driver=bridge net_pv
 
@@ -24,29 +33,24 @@ docker network create --driver=bridge net_pv
 docker run -d --name pv_kc --network net_pv -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin jboss/keycloak:11.0.2
 ```
 
-### STEP 2A - configure KC
-Running the Autoconfig step manually.  
-**NOTE**: This will get called from run.py when starting up the pieval application in 'dev' mode, meaning it will run on the pieval container
-```sh
-pipenv run python docker_kc/config_keycloak.py
-```
-
-**Admin console** [http://localhost:8080/auth/admin](http://localhost:8080/auth/admin).  creds = admin/admin
-
-[http://localhost:8080/auth/realms/pieval_realm/account](http://localhost:8080/auth/realms/pieval_realm/account)
-
-
-
 ### STEP 2 - Launch Pieval App
-**Docker**
+> Using Gunicorn
 ```sh
 docker run --name pieval --network net_pv --mount source="$(pwd)",target=/pieval,type=bind -p 5001:5001 ariedl/pieval:v1.0.0 gunicorn --timeout 1000 -w 4 -b 0.0.0.0:5001 "run:create_app()"
 ```
-
+> Using Flask development server - This enables autoreload for rapid prototyping code changes
 ```sh
 docker run --name pieval --network net_pv --mount source="$(pwd)",target=/pieval,type=bind -p 5001:5001 ariedl/pieval:v1.0.0 python run.py
 ```
 **APP URL**: [localhost:5001/pieval](http://localhost:5001/pieval)
+
+This includes the autoconfiguration of the keycloak service.  If you wish to prototype/develop the autoconfiguration step, you can use this command to run the autoconfiguration step manually.
+```sh
+pipenv run python docker_kc/config_keycloak.py
+```
+Admin console:[http://localhost:8080/auth/admin](http://localhost:8080/auth/admin).  creds = admin/admin
+Account Test page for pieval realm: [http://localhost:8080/auth/realms/pieval_realm/account](http://localhost:8080/auth/realms/pieval_realm/account)
+
 
 
 ### Step 3 - Create a client on net_pv we can use to interact with the services
