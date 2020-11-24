@@ -1,6 +1,6 @@
 # Quickstart Instructions
 Assuming you have docker and docker compose already installed
-1. Clone repo from [here]()
+1. Clone repo from [here](https://gitlab.ri.ucdavis.edu/ri/pydatautils/pieval)
 1. cd pieval
 1. docker-compose --verbose up --force-recreate
 
