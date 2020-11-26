@@ -23,14 +23,22 @@ def create_app():
             # here is where we should call the things that will 'autoconfigure' neighboring services with default params
             # KeyCloak
             logger.info("Auto configuring KeyCloak with dev/demo accounts")
-            config_keycloak.run('admin',
-                                'admin',
-                                "http://pv_kc:8080/auth/admin/realms",
-                                "http://pv_kc:8080/auth/realms/master/protocol/openid-connect/token",
-                                "docker_kc/resources/pieval_realm.json",
-                                "docker_kc/resources/pieval_client.json",
-                                "docker_kc/resources/pieval_user.json",
+            config_keycloak.run(app.config['KC_USER'],
+                                app.config['KC_PASS'],
+                                app.config['KC_REALM_URL'],
+                                app.config['KC_TOK_URL'],
+                                app.config['KC_REALM_JSON'],
+                                app.config['KC_CLIENT_JSON'],
+                                app.config['KC_USER_JSON'],
                                 logger)
+            # config_keycloak.run('admin',
+            #                     'admin',
+            #                     "http://pv_kc:8080/auth/admin/realms",
+            #                     "http://pv_kc:8080/auth/realms/master/protocol/openid-connect/token",
+            #                     "docker_kc/resources/pieval_realm.json",
+            #                     "docker_kc/resources/pieval_client.json",
+            #                     "docker_kc/resources/pieval_user.json",
+            #                     logger)
     return app
 
 
