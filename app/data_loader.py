@@ -34,8 +34,9 @@ class FileDataLoader(object):
     Consider DBDataLoader for production systems
     """
 
-    def __init__(self, database_dir='database/', logger=None):
+    def __init__(self, database_dir='example_database/', image_dir='example_database/example_annot_images/', logger=None):
         self.database_dir = database_dir
+        self.image_dir = image_dir
         self.logger=logger
 
     def getUserData(self, return_as_data_frame=False):
@@ -128,13 +129,14 @@ class FileDataLoader(object):
 #  Db Loader Class
 ##############################################################################
 class DBDataLoader(object):
-    def __init__(self, VAULT_ROLE_ID, VAULT_SECRET_ID, VAULT_SERVER, io_db_vault_path, schema_name, logger=None):
+    def __init__(self, VAULT_ROLE_ID, VAULT_SECRET_ID, VAULT_SERVER, io_db_vault_path, schema_name, image_dir, logger=None):
         #self.vault_token = VAULT_TOKEN
         self.vault_role_id = VAULT_ROLE_ID
         self.vault_secret_id = VAULT_SECRET_ID
         self.vault_server = VAULT_SERVER
         self.io_db_vault_path = io_db_vault_path
         self.schema_name = schema_name
+        self.image_dir = image_dir
         self.logger = logger
         self.io_db_engine = None
 
@@ -365,19 +367,20 @@ class DBDataLoader(object):
 #########################################################################
 # functions
 #########################################################################
-def get_data_loader(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
+def get_data_loader(type, path, image_dir, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
     # construct data loader based on env file
     # consider using flask-sqlalchemy.  This is app scoped not sessio managed
     # >may< not scale.  Tested with 3 concurrent users and all things fine
     logger.info(f"Obtaining a PieVal Data Loader with type {type}") if logger else print("No logger")
     if type == 'file':
-        pv_dl = FileDataLoader(path, logger)
+        pv_dl = FileDataLoader(path, image_dir, logger)
     elif type == 'db':
         pv_dl = DBDataLoader(v_role_id,
                             v_sec_id,
                             v_server,
                             path,
                             db_schema,
+                            image_dir,
                             logger)
     else:
         pv_dl = None

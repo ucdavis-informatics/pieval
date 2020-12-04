@@ -42,7 +42,7 @@ def create_app():
     auth.init_logging(app.config['LOGGER_NAME'])
 
     # initialize data loader in pieval
-    pieval.init_pv_dl(app.config['DATASOURCE_TYPE'], app.config['DATASOURCE_LOCATION'],
+    pieval.init_pv_dl(app.config['DATASOURCE_TYPE'], app.config['DATASOURCE_LOCATION'], app.config['IMAGE_DIRECTORY'],
                       v_role_id=app.config['VAULT_ROLE_ID'],
                       v_sec_id=app.config['VAULT_SECRET_ID'],
                       v_server=app.config['VAULT_SERVER'],

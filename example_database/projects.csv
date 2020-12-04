@@ -1,4 +1,5 @@
-project_name,project_description,project_mode
-kappa_lambda_demo,DEMO PROJECT: Determining if monotypic/clonal plasma cell populations exist,binary
-cncr_hist_mc_demo,DEMO PROJECT: Classifying cancer histology from pathology report text,multiclass
-movie_reviews_demo,DEMO PROJECT: Classifying sentiment from movie reviews,multiclass
+project_name,project_description,data_type,project_mode
+kappa_lambda_demo,DEMO PROJECT: Determining if monotypic/clonal plasma cell populations exist,text,binary
+cncr_hist_mc_demo,DEMO PROJECT: Classifying cancer histology from pathology report text,text,multiclass
+movie_reviews_demo,DEMO PROJECT: Classifying sentiment from movie reviews,text,multiclass
+image_demo,DEMO PROJECT: Classifying image contents,image,binary

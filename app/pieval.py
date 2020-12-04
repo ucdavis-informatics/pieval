@@ -5,6 +5,7 @@ index.py - main app module for pieval.  Will put user on home page
 from flask import (
     Blueprint, url_for, render_template, session, request, redirect, flash, current_app
 )
+from flask.helpers import send_from_directory
 import pandas as pd
 from datetime import datetime
 from random import shuffle
@@ -25,9 +26,9 @@ bp = Blueprint('pieval', __name__, static_folder='static')
 # app init funcs
 # variables/dataloader/logger
 ##########################################################################
-def init_pv_dl(type, path, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
+def init_pv_dl(type, path, image_dir, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
     global pv_dl
-    pv_dl = get_data_loader(type, path,
+    pv_dl = get_data_loader(type, path, image_dir,
                             v_role_id=v_role_id,
                             v_sec_id=v_sec_id,
                             v_server=v_server,
@@ -65,7 +66,7 @@ def pievalIndex():
         # user is logged in
         # user is returning to index, possibly after annotating
         # reset their state by conditionally clearing session vars
-        vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example']
+        vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example','data_type']
         for var in vars_to_pop:
             if var in session.keys():
                 session.pop(var)
@@ -148,7 +149,6 @@ def project(project_name=None):
                     project_leaderboard = pd.DataFrame()
 
                 project_leaderboard = project_leaderboard.to_dict(orient='records')
-                project_leaderboard
 
                 prev_proj_annots_for_user = prev_proj_annots_for_user_df.loc[prev_proj_annots_for_user_df['user_name']==session['user_name']].to_dict(orient='records')
                 prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
@@ -163,6 +163,7 @@ def project(project_name=None):
             session['example_order'] = remaining_examples
             session['cur_proj'] = project_name
             session['project_mode'] = project_metadata['project_mode']
+            session['data_type'] = project_metadata['data_type']
 
             logger.debug(f'In Project() session is {session}')
             # land them on a page that says something like you have selected to annotate for <project name>, you have already annotated <n> records.  There are N left
@@ -192,7 +193,7 @@ def annotate_example(doh='no'):
                     pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
                 except InvalidVaultTokenError:
                     return render_template('bad_vault_token.html')
-                return render_template('annotation.html', one_example=one_example)
+                return render_template('annotation.html', one_example=one_example, data_type=session['data_type'])
             else:
                 logger.error('No Previous example to doh!')
                 return pievalIndex()
@@ -208,7 +209,7 @@ def annotate_example(doh='no'):
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token.html')
             # return annotation template with a single example
-            return render_template('annotation.html', one_example=one_example)
+            return render_template('annotation.html', one_example=one_example, data_type=session['data_type'])
         else:
             logger.debug('Done Annotating')
             return render_template('done.html')
@@ -234,7 +235,8 @@ def get_multiclass_annotation(context_viewed='no'):
                                one_example=one_example,
                                proj_classes=proj_classes,
                                proj_class_data=proj_classes,
-                               context_viewed=context_viewed)
+                               context_viewed=context_viewed,
+                               data_type=session['data_type'])
     else:
         logger.error("Not authorized for this project")
         return pievalIndex()
@@ -287,6 +289,15 @@ def record_annotation():
         logger.error("Not authorized for this project")
         return pievalIndex()
 
+@bp.route("/get_image/<path:filename>")
+@logged_in
+def get_image(filename):
+    if checkAuthZ(session['cur_proj'], session['user_name']):
+        logger.info(f"GET_IMAGE CALL, root_dir = {pv_dl.image_dir}, filename = {filename}...")
+        return send_from_directory(pv_dl.image_dir, filename, as_attachment=True)
+    else:
+        logger.error("Not authorized for this project")
+        return pievalIndex()
 
 ################################################################
 # main

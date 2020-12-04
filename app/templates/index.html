@@ -21,6 +21,7 @@
         <th>Project</th>
         <th>Your Status (% complete)</th>
         <th>Description</th>
+        <th>Data Type</th>
         <th>Mode</th>
       </tr>
       {% for proj in projects %}
@@ -28,6 +29,7 @@
         <td><a href = {{ url_for('pieval.project', project_name=proj.project_name) }}>{{ proj.project_name }}</a></td>
         <td>{{ proj.pct_complete }}</td>
         <td>{{ proj.project_description }}</td>
+        <td>{{ proj.data_type }}</td>
         <td>{{ proj.project_mode }}</td>
       </tr>
       {% endfor %}
