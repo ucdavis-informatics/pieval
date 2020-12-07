@@ -67,20 +67,38 @@ Columns:
 ## Building the schema in SQL
 We include code that automates the build of a SQL database, based on a combination of the example csv files (if you want to include the demo data) and table_metadata.py to ensure the correct datatypes.  Follow these steps to create a SQL database in your environment.
 
-### Step 1 Create the schema
+### Step 1 Create the schemas
+We reccomend 3 schemas to optimally run PieVal:
+1. pieval
+1. pieval_stage
+1. pieval_backup
+
 **Oracle**  
 In Oracle users are equal to schemas, so we create a pieval user.  
 ```sql
+-- pieval
 create user pieval identified by a_strong_password;
 grant create table to pieval;
 grant create session to pieval;
 grant unlimited tablespace to pieval;
+-- pieval_stage
+create user pieval_stage identified by a_strong_password;
+grant create table to pieval_stage;
+grant create session to pieval_stage;
+grant unlimited tablespace to pieval_stage;
+-- pieval_backup
+create user pieval_backup identified by a_strong_password;
+grant create table to pieval_backup;
+grant create session to pieval_backup;
+grant unlimited tablespace to pieval_backup;
 ```
 
 **MSSQL**
 In MSSQL, the meaning of schema is a bit different.  Assuming you 'own' a database in MSSQL, all you need to do is create the pieval schema with this command:  
 ```sql
 CREATE SCHEMA pieval;
+CREATE SCHEMA pieval_stage;
+CREATE SCHEMA pieval_backup;
 ```
 
 ### Step 2 - update instance/config.py with the details for your database

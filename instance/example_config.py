@@ -29,7 +29,7 @@ To alter which instance we are wired into we need only to change the point to th
 The contents of this file contains pointers to the correct instance
 """
 ##################
-RUN_MODE='dev' # Options are 'dev' or 'prod'
+RUN_MODE='dev' # 'prod'
 OIDC_CLIENT_SECRETS = None
 if RUN_MODE == 'dev':
     OIDC_CLIENT_SECRETS = 'instance/client_secrets_dev.json'
@@ -40,8 +40,10 @@ if RUN_MODE == 'dev':
     KC_REALM_JSON="docker_kc/resources/pieval_realm.json"
     KC_CLIENT_JSON="docker_kc/resources/pieval_client.json"
     KC_USER_JSON="docker_kc/resources/pieval_user.json"
+    OIDC_OPENID_REALM = 'pieval_realm'
 elif RUN_MODE == 'prod':
     OIDC_CLIENT_SECRETS = 'instance/client_secrets.json'
+    OIDC_OPENID_REALM = 'cdi3'
 else:
     OIDC_CLIENT_SECRETS = None
 
@@ -50,7 +52,6 @@ else:
 OIDC_ID_TOKEN_COOKIE_SECURE = False
 OIDC_REQUIRE_VERIFIED_EMAIL = False
 OIDC_USER_INFO_ENABLED = True
-OIDC_OPENID_REALM = 'cdi3'
 OIDC_SCOPES = ['openid', 'email', 'profile']
 OIDC_INTROSPECTION_AUTH_METHOD = 'client_secret_post'
 OIDC_CALLBACK_ROUTE = '/pieval/oidc_callback'
@@ -82,6 +83,7 @@ DATASOURCE_TYPE = 'file'
 # value is either filesystem if DATASOURCE_TYPE == 'file' path or vault path if DATASOURCE_TYPE == 'db'
 DATASOURCE_LOCATION = 'example_database/'
 
+IMAGE_DIRECTORY='/pieval/example_database/example_annot_images/'
 # defaulted to pieval.
 # Change this is you want to place tables in a different schema
 # only relevant if DATASOURCE_TYPE == 'db'
