@@ -63,6 +63,7 @@ flask-apscheduler = "*"
 python-dotenv = "*"
 piesafe = "*"
 ucd-ri-pydbutils = "*"
+scipy = "*"
 
 [requires]
 python_version = "3.6"
