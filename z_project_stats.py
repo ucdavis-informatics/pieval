@@ -51,23 +51,22 @@ print(ae_df['user_name'].value_counts().sum())
 
 # %%
 len(ae_df['project_name'].unique())
+
+# %%
+ae_df.head()
 # %%
 idle_time_remove_thresh_in_seconds = 600
 
-annot_time_filter_cols = ['user_name','response_time']
+annot_time_filter_cols = ['user_name','project_name','response_time']
 annot_time_df = ae_df.filter(annot_time_filter_cols).copy()
 annot_time_df = annot_time_df.sort_values(['user_name','response_time'])
 # add shifted column response_time_next
-annot_time_df['response_time_next'] = annot_time_df.groupby(['user_name'])['response_time'].shift(-1,
-                                                                                                 axis=0)
+annot_time_df['response_time_next'] = annot_time_df.groupby(['user_name'])['response_time'].shift(-1, axis=0)
 annot_time_df['response_time_diff'] = annot_time_df['response_time_next'] - annot_time_df['response_time']
 annot_time_df['response_time_seconds'] = annot_time_df['response_time_diff'].dt.total_seconds()
 
-# NOTE: Since we are measuring inter-annotation intervals, we lose on record per annotator 
-annot_time_df = annot_time_df.dropna()
-
 # group to get time stats
-annot_time_grp = (annot_time_df.loc[annot_time_df['response_time_seconds'] < idle_time_remove_thresh_in_seconds]
+annot_time_grp = (annot_time_df.dropna().loc[annot_time_df['response_time_seconds'] < idle_time_remove_thresh_in_seconds]
               .groupby(['user_name'])
               .agg(
                   response_time_mean=('response_time_seconds','mean'),
@@ -76,4 +75,10 @@ annot_time_grp = (annot_time_df.loc[annot_time_df['response_time_seconds'] < idl
 
 print(annot_time_grp)
 print(annot_time_grp.mean())
+# %%
+annot_time_df.head()
+# %%
+mean_confidence_interval(annot_time_df.loc[annot_time_df['response_time_seconds']<600].dropna()['response_time_seconds'])
+# %%
+ae_df.shape
 # %%
