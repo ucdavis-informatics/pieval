@@ -112,6 +112,64 @@ def pievalIndex():
 
         return render_template('index.html', projects=pieval_projects.to_dict(orient='records'))
 
+@bp.route("/index_bs/")
+@logged_in
+def get_index():
+    if not session.get('logged_in'):
+        # if not logged in
+        # return render_template('login.html')
+        redirect(url_for('auth.login'))
+    else:
+        # user is logged in
+        # user is returning to index, possibly after annotating
+        # reset their state by conditionally clearing session vars
+        vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example','data_type']
+        for var in vars_to_pop:
+            if var in session.keys():
+                session.pop(var)
+        # log session
+        logger.debug(f'Index session var is {session}')
+        # get all projects for user
+        try:
+            pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
+            data = pv_dl.getProjectData(return_as_dataframe=True)
+            prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
+        except InvalidVaultTokenError as e:
+            logger.error(f"Caught bad token error{e}")
+            return render_template('bad_vault_token.html')
+        except KeyError as e:
+            logger.error(f"Caught missing person key error{e}")
+            return render_template('user_not_found.html')
+        except Exception as e:
+            logger.error(f"Caught unidentified error{e}")
+            return render_template('error.html')
+
+        # Assuming no exceptions: compute project stats
+        proj_example_counts = (data.groupby(['project_name'])
+                                   .size()
+                                   .to_frame()
+                                   .rename(columns={0:'num_examples'})
+                                   .reset_index())
+
+        user_proj_counts = (prev_annots_for_user.groupby(['project_name'])
+                                   .size()
+                                   .to_frame()
+                                   .rename(columns={0:'num_annotated'})
+                                   .reset_index())
+
+        proj_status = pd.merge(proj_example_counts,
+                               user_proj_counts,
+                               on='project_name',
+                               how='left')
+        proj_status['pct_complete'] = round( (proj_status['num_annotated'] / proj_status['num_examples']) * 100)
+        proj_status = proj_status.fillna(0)
+
+        # join tables together
+        pieval_projects = pieval_projects.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
+
+        return render_template('index_bs.html', projects=pieval_projects.to_dict(orient='records'))
+
+
 
 @bp.route("/project/<project_name>")
 @logged_in

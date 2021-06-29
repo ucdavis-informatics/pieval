@@ -1,5 +1,4 @@
 # %%  Imports and config
-from numpy.lib.financial import pv
 import pandas as pd
 import numpy as np
 import scipy.stats
@@ -46,6 +45,8 @@ print(len(ae))
 # convert to dataframe
 ae_df = pd.DataFrame(ae)
 ae_df = ae_df.loc[~ae_df['user_name'].isin(['awriedl','jmcawood','mrenquis','cyvhuynh'])]
+ae_df = ae_df.loc[ae_df['project_name'].isin(['kappa_lambda_cycle_2'])]
+ae_df['context_viewed'] = ae_df['context_viewed'].fillna('no')
 print(ae_df['user_name'].value_counts())
 print(ae_df['user_name'].value_counts().sum())
 
@@ -53,11 +54,15 @@ print(ae_df['user_name'].value_counts().sum())
 len(ae_df['project_name'].unique())
 
 # %%
+ae_df['project_name'].unique()
+# %%
 ae_df.head()
+# %%
+ae_df.info()
 # %%
 idle_time_remove_thresh_in_seconds = 600
 
-annot_time_filter_cols = ['user_name','project_name','response_time']
+annot_time_filter_cols = ['user_name','project_name','response_time','context_viewed']
 annot_time_df = ae_df.filter(annot_time_filter_cols).copy()
 annot_time_df = annot_time_df.sort_values(['user_name','response_time'])
 # add shifted column response_time_next
@@ -65,9 +70,22 @@ annot_time_df['response_time_next'] = annot_time_df.groupby(['user_name'])['resp
 annot_time_df['response_time_diff'] = annot_time_df['response_time_next'] - annot_time_df['response_time']
 annot_time_df['response_time_seconds'] = annot_time_df['response_time_diff'].dt.total_seconds()
 
+# %%
 # group to get time stats
 annot_time_grp = (annot_time_df.dropna().loc[annot_time_df['response_time_seconds'] < idle_time_remove_thresh_in_seconds]
               .groupby(['user_name'])
+              .agg(
+                  response_time_mean=('response_time_seconds','mean'),
+                  response_time_95_ci=('response_time_seconds',mean_confidence_interval)
+              ))
+
+print(annot_time_grp)
+print(annot_time_grp.mean())
+
+# %%
+# group to get time stats including context viewed layer
+annot_time_grp = (annot_time_df.dropna().loc[annot_time_df['response_time_seconds'] < idle_time_remove_thresh_in_seconds]
+              .groupby(['context_viewed'])
               .agg(
                   response_time_mean=('response_time_seconds','mean'),
                   response_time_95_ci=('response_time_seconds',mean_confidence_interval)

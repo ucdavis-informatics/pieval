@@ -5,6 +5,8 @@ import socket
 import time
 import random
 import logging
+import os
+from pathlib import Path
 from docker_kc import config_keycloak
 
 def create_app():
@@ -44,6 +46,11 @@ def create_app():
 
 if __name__ == '__main__':
     # DEVELOPMENT (Internal-facing, Debug on)
+    os.environ['FLASK_ENV']='development'
+
     app = create_app()
     app.app_context().push()
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True,
+            host='0.0.0.0',
+            port=5001,
+            extra_files=Path.cwd().joinpath('templates').rglob('*.html'))
