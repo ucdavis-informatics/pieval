@@ -46,7 +46,7 @@ def checkAuthZ(project_name, user_name):
     try:
         user_proj_list = pv_dl.getProjectUsers()[user_name]
     except InvalidVaultTokenError:
-        return render_template('bad_vault_token.html')
+        return render_template('bad_vault_token_bs.html')
     return True if project_name in user_proj_list else False
 
 def list_diff(l1, l2):
@@ -79,70 +79,13 @@ def pievalIndex():
             prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
         except InvalidVaultTokenError as e:
             logger.error(f"Caught bad token error{e}")
-            return render_template('bad_vault_token.html')
+            return render_template('bad_vault_token_bs.html')
         except KeyError as e:
             logger.error(f"Caught missing person key error{e}")
-            return render_template('user_not_found.html')
+            return render_template('user_not_found_bs.html')
         except Exception as e:
             logger.error(f"Caught unidentified error{e}")
-            return render_template('error.html')
-
-        # Assuming no exceptions: compute project stats
-        proj_example_counts = (data.groupby(['project_name'])
-                                   .size()
-                                   .to_frame()
-                                   .rename(columns={0:'num_examples'})
-                                   .reset_index())
-
-        user_proj_counts = (prev_annots_for_user.groupby(['project_name'])
-                                   .size()
-                                   .to_frame()
-                                   .rename(columns={0:'num_annotated'})
-                                   .reset_index())
-
-        proj_status = pd.merge(proj_example_counts,
-                               user_proj_counts,
-                               on='project_name',
-                               how='left')
-        proj_status['pct_complete'] = round( (proj_status['num_annotated'] / proj_status['num_examples']) * 100)
-        proj_status = proj_status.fillna(0)
-
-        # join tables together
-        pieval_projects = pieval_projects.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
-
-        return render_template('index.html', projects=pieval_projects.to_dict(orient='records'))
-
-@bp.route("/index_bs/")
-@logged_in
-def get_index():
-    if not session.get('logged_in'):
-        # if not logged in
-        # return render_template('login.html')
-        redirect(url_for('auth.login'))
-    else:
-        # user is logged in
-        # user is returning to index, possibly after annotating
-        # reset their state by conditionally clearing session vars
-        vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example','data_type']
-        for var in vars_to_pop:
-            if var in session.keys():
-                session.pop(var)
-        # log session
-        logger.debug(f'Index session var is {session}')
-        # get all projects for user
-        try:
-            pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
-            data = pv_dl.getProjectData(return_as_dataframe=True)
-            prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
-        except InvalidVaultTokenError as e:
-            logger.error(f"Caught bad token error{e}")
-            return render_template('bad_vault_token.html')
-        except KeyError as e:
-            logger.error(f"Caught missing person key error{e}")
-            return render_template('user_not_found.html')
-        except Exception as e:
-            logger.error(f"Caught unidentified error{e}")
-            return render_template('error.html')
+            return render_template('error_bs.html')
 
         # Assuming no exceptions: compute project stats
         proj_example_counts = (data.groupby(['project_name'])
@@ -212,7 +155,7 @@ def project(project_name=None):
                 prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
 
             except InvalidVaultTokenError:
-                return render_template('bad_vault_token.html')
+                return render_template('bad_vault_token_bs.html')
 
             # compute remaining annot list
             remaining_examples = list_diff(proj_example_list, prior_example_list)
@@ -225,7 +168,7 @@ def project(project_name=None):
 
             logger.debug(f'In Project() session is {session}')
             # land them on a page that says something like you have selected to annotate for <project name>, you have already annotated <n> records.  There are N left
-            return render_template('project.html',
+            return render_template('project_bs.html',
                                    project_metadata=project_metadata,
                                    total_examples=len(proj_example_list),
                                    user_examples=len(prior_example_list),
@@ -250,8 +193,8 @@ def annotate_example(doh='no'):
                     # remove existing annotation from database, before re-adding
                     pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
                 except InvalidVaultTokenError:
-                    return render_template('bad_vault_token.html')
-                return render_template('annotation.html', one_example=one_example, data_type=session['data_type'])
+                    return render_template('bad_vault_token_bs.html')
+                return render_template('annotation_bs.html', one_example=one_example, data_type=session['data_type'])
             else:
                 logger.error('No Previous example to doh!')
                 return pievalIndex()
@@ -265,12 +208,12 @@ def annotate_example(doh='no'):
             try:
                 one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
             except InvalidVaultTokenError:
-                return render_template('bad_vault_token.html')
+                return render_template('bad_vault_token_bs.html')
             # return annotation template with a single example
-            return render_template('annotation.html', one_example=one_example, data_type=session['data_type'])
+            return render_template('annotation_bs.html', one_example=one_example, data_type=session['data_type'])
         else:
             logger.debug('Done Annotating')
-            return render_template('done.html')
+            return render_template('done_bs.html')
     else:
         logger.error("Not authorized for this project")
         return pievalIndex()
@@ -288,8 +231,8 @@ def get_multiclass_annotation(context_viewed='no'):
             proj_classes = pv_dl.getProjectClasses(project_name=session['cur_proj'])
             logger.debug(f"In get_multiclass_annotation() proj_classes = {proj_classes}")
         except InvalidVaultTokenError:
-            return render_template('bad_vault_token.html')
-        return render_template('annotation_mc.html',
+            return render_template('bad_vault_token_bs.html')
+        return render_template('annotation_bs_mc.html',
                                one_example=one_example,
                                proj_classes=proj_classes,
                                proj_class_data=proj_classes,
@@ -331,7 +274,7 @@ def record_annotation():
                           response,
                           context_viewed)
             except InvalidVaultTokenError:
-                return render_template('bad_vault_token.html')
+                return render_template('bad_vault_token_bs.html')
             # update session variable by removing this object from their list
             temp_example_order = session['example_order']
             temp_example_order.remove(session['cur_example'])

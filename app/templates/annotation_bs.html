@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+<div class='row'>
+    <div class = 'col'>
+        <p><b>Prompt: </b>{{ one_example.prompt }}</p>
+    </div>
+</div>
+
+<div class='row'>
+    <div class = 'col'>
+        {% if data_type == 'text' %}
+            <p><b>Data: </b>{{ one_example.data }}</p>
+        {% elif data_type == 'image' %}
+            <p><b>Data: </b></p> 
+            <img src="{{ url_for('pieval.get_image', filename=one_example.data) }}", alt="Image to annotate">
+        {% else %}
+            <p><b>Data: </b>IM CONFUSED!!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class='row'>
+    <div class = 'col'>
+        <p id="full_report_data" style="display: none"><b>Data_ext: </b>{{ one_example.data_ext }}</p>
+    </div>
+</div>
+
+<div class='row justify-content-md-center'>
+    <a onclick="toggleHideUnhideFullReportData('full_report_data')" href="#">Show/Hide More Context</a>
+</div>
+    
+<hr>
+
+<!-- The response options -->
+<div class='row justify-content-md-center'>
+    <p>{{ one_example.prompt }}</p>
+</div>
+
+<div class='row justify-content-md-center'>
+        <form action="{{ url_for('pieval.record_annotation') }}" method="post">
+            <div class="radio-toolbar">                
+                <input type="radio"  id="radioAgree" name="response" value="agree" autocomplete="off">
+                <label for="radioAgree">Agree</label>
+                <input type="radio"  id="radioReview" name="response" value="review" autocomplete="off">
+                <label for="radioReview">Review</label>
+                <input type="radio" id="radioPass" name="response" value="pass" autocomplete="off">
+                <label for="radioPass">Pass</label>
+                <input type="radio" id="radioDisagree" name="response" value="disagree" autocomplete="off">
+                <label for="radioDisagree">Disagree</label>
+            </div>
+
+            <div class="row justify-content-md-center">
+                <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+            </div>
+            <!-- Hidden field for tracking context viewage-->
+            <input type="text" id="context_viewed" name="context_viewed" value="no" style="display: none">
+        </form>
+</div>
+
+
+
+{% endblock %}

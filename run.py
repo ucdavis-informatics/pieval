@@ -7,6 +7,7 @@ import random
 import logging
 import os
 from pathlib import Path
+from itertools import chain
 from docker_kc import config_keycloak
 
 def create_app():
@@ -33,14 +34,6 @@ def create_app():
                                 app.config['KC_CLIENT_JSON'],
                                 app.config['KC_USER_JSON'],
                                 logger)
-            # config_keycloak.run('admin',
-            #                     'admin',
-            #                     "http://pv_kc:8080/auth/admin/realms",
-            #                     "http://pv_kc:8080/auth/realms/master/protocol/openid-connect/token",
-            #                     "docker_kc/resources/pieval_realm.json",
-            #                     "docker_kc/resources/pieval_client.json",
-            #                     "docker_kc/resources/pieval_user.json",
-            #                     logger)
     return app
 
 
@@ -53,4 +46,6 @@ if __name__ == '__main__':
     app.run(debug=True,
             host='0.0.0.0',
             port=5001,
-            extra_files=Path.cwd().joinpath('templates').rglob('*.html'))
+            extra_files=chain(Path.cwd().joinpath('app/templates').rglob('*.html'),
+                                Path.cwd().joinpath('app/static/styles').rglob('*.css'))
+            )

@@ -6,6 +6,14 @@ from app.data_loader import DBDataLoader
 import os
 import logging
 from instance import config
+from pathlib import Path
+from itertools import chain
+
+# %%
+extra_files = chain(Path.cwd().joinpath('app/templates').rglob('*.html'),
+                Path.cwd().joinpath('app/static/styles').rglob('*.css'))
+for file in extra_files:
+    print(file)
 # %%
 ##########################################################################
 # app environ

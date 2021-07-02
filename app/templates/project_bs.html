@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class='row justify-content-md-center'>
+    <div class = "col col-lg-6">
+        <h2>Project: '{{ project_metadata.project_name }}'</h2>
+    </div>
+</div>
+<div class='row justify-content-md-center'>
+    <div class = "col col-lg-6">
+        <p><b>Description: </b>{{ project_metadata.project_description }}</p>
+    </div>
+</div>
+<div class='row justify-content-md-center'>
+    <div class = "col col-lg-6">
+        <p><b>Data Type: </b>{{ project_metadata.data_type }}</p>
+    </div>
+</div>
+<div class='row justify-content-md-center'>
+    <div class = "col col-lg-6">
+        <p><b>Status: </b>You have completed {{ user_examples }} out of {{ total_examples }} records in this project</p>
+    </div>
+</div>
+<!-- Form submit to start annotating -->
+<div class='row justify-content-md-center'>
+    <div class = "col col-lg-3">
+        <form method="GET" action={{ url_for('pieval.annotate_example') }}>
+            <!--<input type="submit" value="Start Annotating!">-->
+            <button type="submit" class="btn btn-primary btn-lg">Start Annotating</button>
+        </form>
+    </div>
+</div>
+<br>
+
+<div class="row justify-content-md-center">
+    <div class = "col col-lg-3">
+        <h2>Leaderboard</h2>
+        {%  if project_leaderboard|length ==0 %}
+            <p>Be the first on the leaderboard!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row justify-content-md-center">
+    <div class='col col-lg-6'>
+        <table class="table table-striped">
+            <tr>
+              <th>Annotator</th>
+              <th>Number of Annotations</th>
+                <th>Status</th>
+            </tr>
+            {% for pl in project_leaderboard %}
+            <tr>
+              <td>{{ pl.user_name }}</td>
+              <td>{{ pl.annotation_count }}</td>
+              <td><img src="{{ url_for('pieval.static',filename=pl.medal) }}" alt="Annotator Status"></td>
+            </tr>
+            {% endfor %}
+          </table>
+    </div>
+</div>
+
+{% endblock %}

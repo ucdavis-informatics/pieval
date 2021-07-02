@@ -107,12 +107,12 @@ table.center_table {
 }
 
 .radio-toolbar input[type="radio"]:checked + label {
-    background-color: #bfb;
-    border-color: #4c4;
+    background-color: #224881;
+    border-color: #051630;
 }
 
 .radio-submit input[type="submit"]{
-  background-color: #4CAF50;
+  background-color: #224881;
   border: none;
   color: white;
   padding: 16px 32px;

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+<div class="row justify-content-md-center">
+    <h3>You finished this project!</h3>
+</div>
+
+<div class="row justify-content-md-center">
+    <form method="GET" action="{{ url_for('pieval.pievalIndex') }}">
+        <button type="submit" class="btn btn-success" value="Project List">Project List</button>
+    </form>
+</div>
+
+{% endblock %}

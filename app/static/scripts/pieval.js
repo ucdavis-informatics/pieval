@@ -13,3 +13,20 @@ function toggleHideUnhideFullReportData(in_ele_id, in_form_cell_id){
     x.style.display = "none";
   }
 }
+
+
+function validateAnnotSelection(){
+  tt = (element) => element;
+  rbs = document.querySelectorAll('input[name="response"]');
+  rb_checked = [];
+  for(rb of rbs){
+    rb_checked.push(rb.checked)
+    console.log(rb.checked)
+  }
+  if(rb_checked.some(tt)){
+      return true
+  }else{
+      alert("Select a value first!")
+      return false
+  }
+}
