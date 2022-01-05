@@ -10,3 +10,4 @@ venv/
 local*
 *.pyc
 .idea/
+.DS_Store
