@@ -76,3 +76,14 @@ Take a look at the other files in example_database.  App behavior is modified by
 Take a look at the code.  You can make changes in real time.  The app will reload with your changes.  This enables rapid development.
 
 > Pro Tip: These changes will have an immediate impact because the PieVal app container is sharing these files with you via Docker Bind Mount.  This means that PieVal is merely referencing these files that exist on your computers filesystem!
+
+---
+## Running the app without auth
+
+```sh
+docker run -it \
+--mount src=$(pwd),target=/pieval,type=bind \
+-p 5001:5001 \
+ariedl/pieval:v1.0.0 /bin/bash -c "cd /pieval && python run.py"
+```
+

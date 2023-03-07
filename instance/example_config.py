@@ -35,8 +35,8 @@ if RUN_MODE == 'dev':
     OIDC_CLIENT_SECRETS = 'instance/client_secrets_dev.json'
     KC_USER='admin'
     KC_PASS='admin'
-    KC_REALM_URL="http://pv_kc:8080/auth/admin/realms"
-    KC_TOK_URL="http://pv_kc:8080/auth/realms/master/protocol/openid-connect/token"
+    KC_REALM_URL="http://pv_kc:8443/auth/admin/realms"
+    KC_TOK_URL="http://pv_kc:8443/auth/realms/master/protocol/openid-connect/token"
     KC_REALM_JSON="docker_kc/resources/pieval_realm.json"
     KC_CLIENT_JSON="docker_kc/resources/pieval_client.json"
     KC_USER_JSON="docker_kc/resources/pieval_user.json"

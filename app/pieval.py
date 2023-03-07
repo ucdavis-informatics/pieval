@@ -56,12 +56,12 @@ def list_diff(l1, l2):
 # web events
 ####################################################################
 @bp.route("/")
-@logged_in
+# @logged_in
 def pievalIndex():
     if not session.get('logged_in'):
         # if not logged in
-        # return render_template('login.html')
-        redirect(url_for('auth.login'))
+        return render_template('login.html')
+        # redirect(url_for('auth.login'))
     else:
         # user is logged in
         # user is returning to index, possibly after annotating
@@ -112,10 +112,16 @@ def pievalIndex():
 
         return render_template('index_bs.html', projects=pieval_projects.to_dict(orient='records'))
 
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    user_name = request.form['user_name']
+    session['logged_in'] = True
+    session['user_name'] = user_name
+    return pievalIndex()
 
 
 @bp.route("/project/<project_name>")
-@logged_in
+# @logged_in
 def project(project_name=None):
     if not project_name:
         return "You did not provide a project name, Try again" + url_for('pievalIndex')
@@ -180,7 +186,7 @@ def project(project_name=None):
 
 @bp.route("/annotate_example")
 @bp.route("/annotate_example/<doh>")
-@logged_in
+# @logged_in
 def annotate_example(doh='no'):
     if checkAuthZ(session['cur_proj'], session['user_name']):
         if doh == 'yes':
@@ -219,7 +225,7 @@ def annotate_example(doh='no'):
         return pievalIndex()
 
 
-@logged_in
+# @logged_in
 def get_multiclass_annotation(context_viewed='no'):
     logger.debug('Getting a multiclass example')
     if checkAuthZ(session['cur_proj'], session['user_name']):
@@ -244,7 +250,7 @@ def get_multiclass_annotation(context_viewed='no'):
 
 
 @bp.route("/record_annotation", methods=['POST'])
-@logged_in
+# @logged_in
 def record_annotation():
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # extract sess vars
@@ -291,7 +297,7 @@ def record_annotation():
         return pievalIndex()
 
 @bp.route("/get_image/<path:filename>")
-@logged_in
+# @logged_in
 def get_image(filename):
     if checkAuthZ(session['cur_proj'], session['user_name']):
         logger.info(f"GET_IMAGE CALL, root_dir = {pv_dl.image_dir}, filename = {filename}...")

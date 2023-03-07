@@ -25,15 +25,15 @@ def create_app():
             logger.info("------ Bringing App up in DEV mode!!! ----------")
             # here is where we should call the things that will 'autoconfigure' neighboring services with default params
             # KeyCloak
-            logger.info("Auto configuring KeyCloak with dev/demo accounts")
-            config_keycloak.run(app.config['KC_USER'],
-                                app.config['KC_PASS'],
-                                app.config['KC_REALM_URL'],
-                                app.config['KC_TOK_URL'],
-                                app.config['KC_REALM_JSON'],
-                                app.config['KC_CLIENT_JSON'],
-                                app.config['KC_USER_JSON'],
-                                logger)
+            # logger.info("Auto configuring KeyCloak with dev/demo accounts")
+            # config_keycloak.run(app.config['KC_USER'],
+            #                     app.config['KC_PASS'],
+            #                     app.config['KC_REALM_URL'],
+            #                     app.config['KC_TOK_URL'],
+            #                     app.config['KC_REALM_JSON'],
+            #                     app.config['KC_CLIENT_JSON'],
+            #                     app.config['KC_USER_JSON'],
+            #                     logger)
     return app
 
 

@@ -27,13 +27,13 @@ def create_app():
     logger.addHandler(ch)
 
     # add auth
-    logger.info("Configuring OIDC auth layer")
-    auth.oidc.init_app(app)
+    # logger.info("Configuring OIDC auth layer")
+    # auth.oidc.init_app(app)
 
     # register blueprints
     logger.info("Registerting blueprints")
     app.register_blueprint(pieval.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
-    app.register_blueprint(auth.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
+    # app.register_blueprint(auth.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
     app.secret_key = app.config['SECRET_KEY']
 
     # initialize logger(s) in app files with logger name so they all get a handle to the same logger

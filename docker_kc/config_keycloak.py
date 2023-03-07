@@ -76,8 +76,8 @@ def run(username, password, r_url, tok_url,
     """
         Runnable function that does the configuration
     """
-    logger.info(f"Sleeping for 10 seconds before starting to config to prevent connection refused errors!!")
-    time.sleep(10)
+    logger.info(f"Sleeping for 20 seconds before starting to config to prevent connection refused errors!!")
+    time.sleep(20)
     logger.info(f"Done sleeping - now configuring!")
     # Step 1 - create a realm
     logger.info(f"Creating realm from {realm_json_path}")
@@ -108,8 +108,8 @@ def main():
     username='admin'
     password='admin'
     # Urls
-    token_url = "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
-    realm_url = "http://localhost:8080/auth/admin/realms"
+    token_url = "http://localhost:8443/auth/realms/master/protocol/openid-connect/token"
+    realm_url = "http://localhost:8443/auth/admin/realms"
 
     # realm json
     realm_json_path = "docker_kc/resources/pieval_realm.json"

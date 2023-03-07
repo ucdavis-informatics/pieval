@@ -18,9 +18,9 @@ services:
       - keycloak
   keycloak:
     container_name: pv_kc
-    image: jboss/keycloak:11.0.2
+    image: jboss/keycloak:16.1.1
     ports:
-      - "8080:8080"
+      - "8443:8443"
     networks: 
       - net_pv
     environment: 
