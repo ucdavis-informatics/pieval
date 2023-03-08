@@ -11,3 +11,4 @@ local*
 *.pyc
 .idea/
 .DS_Store
+site/

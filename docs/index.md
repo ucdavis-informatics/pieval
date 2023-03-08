@@ -1,4 +1,4 @@
-# Pie ![pieval logo](../app/static/images/pieVal_Logo_medium.png)Val
+# Pie ![pieval logo](img/pieVal_Logo_medium.png)Val
 
 As much as 83% of biomedical information is locked away in clinical note data [1]. It is considered locked away because the inherently unstructured nature of note data presents unique challenges. First, the tools and processes necessary to work with unstructured data are specialized and complicated. However, the tooling is reaching a critical point of commoditization making text data processing more widely possible. Due to recent advances in compute architectures and associated software frameworks, Natural Language Processing (NLP), which originated as a subfield of computer science and linguistics and offers computational approaches to deal with digitized text, has started to enter the mainstream.  Tooling and frameworks will never mask the need for large volumes of gold lableled data which must be used to guide NLP development, sometimes as training data, and other times as evaluative data.  Labelling data is an expensive activity but with focused scope and a little innotation, we can minimize this cost to the extent possible.
 
