@@ -30,7 +30,7 @@ There should be one row for each possible class label. (See the project_classes 
 #### Running Project Creation step
 Review the project create CLI api here:
 ```shell script
-$ pipenv run python create_project.py --help
+$ python create_project.py --help
 ```
 
 Assuming:  
@@ -42,7 +42,7 @@ project mode: binary
 The command would look like:
 
 ```shell script
-$ pipenv run python create_project.py -dt test_project_data \
+$ python create_project.py -dt test_project_data \
 -u test1 \
 -u test2 \
 -pd "test project description" \
@@ -56,10 +56,10 @@ $ pipenv run python create_project.py -dt test_project_data \
 ### Deleting Projects - using delete_project.py
 Delting a project is easy, almost too easy!  Simply call the delete_project.py script with a single paramenter, project name and all project data will be deleted for you.  To help ensure you don't lose any data, a full backup will be created in the pieval backup schema.  It is up to you to use this tool responsibly.  Please ensure you have captured the data you want BEFORE removing a project.  The backup does exist, but you should not rely on it!  This is implemented as a CLI script.  The API can be examined here:
 ```shell script
-$ pipenv run python delete_project.py --help
+$ python delete_project.py --help
 ```
 
 A specific example (assuming you have a project named 'test_project' in your database):  
 ```shell script
-$ pipenv run python delete_project.py -pn test_project
+$ python delete_project.py -pn test_project
 ```

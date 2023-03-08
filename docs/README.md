@@ -1,5 +1,5 @@
 # PieVal
-![pieval logo](app/static/images/pieVal_Logo_medium.png)  
+![pieval logo](../app/static/images/pieVal_Logo_medium.png)  
 
 
 # About
@@ -64,19 +64,3 @@ While the app is running, it makes heavy use of the session variable, a dictiona
 Using the [Flask AP Scheduler](https://github.com/viniciuschiele/flask-apscheduler) some helpful background tasks are triggered:
 1. Renew Vault approle token - Without any utilization the approle tokens expire every 192 hours.  This triggered task renews the token every 13 hours to prevent the approle token from expiring
 1. Send Reminder Emails - If configured, this task will send emails (only M-F at 0900) to all system users that have exceeded the configurable number of days since recording an annotation while they have active projects.  Helpful for annotation compliance.
-
----
-### Contributor Credits
-Bill Riedl: Idea guy / Lead dev  
-Joseph Cawood: valR prototype author/ PieVal power user  
-Matt Renquist: Auth and Deployment strategy, inlcuding Docker support  
-Aaron Rosenburg: Primary clinical test user  
-Jp Graff: Clincal test user  
-Cy Huynh: Logo Developer  
-
-
-### Authorship
-- Bill Riedl   
-- Original Author Date: 2019-01-13   
-- Copyright Regents of the University of California
-- 2020

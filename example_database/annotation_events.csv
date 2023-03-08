@@ -1,3 +1,1 @@
 response_time,project_name,user_name,user_ip,example_id,response,context_viewed
-2021-07-02 21:03:17,kappa_lambda_demo,pieval,172.20.0.3,2,agree,no
-2021-07-02 21:03:19,kappa_lambda_demo,pieval,172.20.0.3,1,review,no

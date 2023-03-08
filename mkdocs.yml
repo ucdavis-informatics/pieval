@@ -1,0 +1,22 @@
+site_name: PieVal Technical Documentation
+site_url: https://repos.ri.ucdavis.edu/docs/pieval/site
+site_description: Project documentation generated with love - powered by markdown and MkDocs
+site_author: Bill Riedl
+
+repo_url: ""
+edit_uri: ""
+
+theme:
+    name: readthedocs
+    locale: en
+
+nav:
+    - Home: index.md
+    - Tech Details:
+      - Development: README_Dev_Mode.md
+      - Production: README_Production_Mode.md
+      - Persistance: README_Persistence.md
+    
+plugins:
+    - search
+    - mkdocstrings
