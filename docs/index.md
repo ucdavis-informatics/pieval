@@ -4,7 +4,7 @@ As much as 83% of biomedical information is locked away in clinical note data [1
 
 PieVal, combining the words Python and Validation, is a web-based, secure, text data labelling tool designed for distributed annotation of sensitive data supporting document level annotations and captures binary and multi-class labels.  It is designed to be part of an iterative continuous improvement cycle by reframing the labelling process as an assertion test.  This reframing provides a consistent interface regardless of class number or project stage.  It also had the side effect of decreasing annotation time by an average of 50% compared with other tools; at an average of less than 30 seconds per document.  Additional features include the ability to directly test the impact of text enrichment strategies on both annotation times as well as downstream model performance. In real life, PieVal can also be used to validate any computational process on text data.  All of these benefits are primarily due to PieVal's framing as an assertion tester.  If you are clever about how you frame your assertions you can make PieVal capture ground truth in a number of circumstances.
 
-
+---
 ## Key Features
 
 - Secure (when served over HTTPS and secured by [Keycloak](https://www.keycloak.org))
@@ -17,6 +17,11 @@ PieVal, combining the words Python and Validation, is a web-based, secure, text 
 - Supports both Filesystem and Database persistance strategies
   - The Filesystem strategy should only be used for development, demonstrations, and single user annotation capture
   - The DB strategy should be used when multiple concurrent annotators are expected
+
+---
+## How to use PieVal
+
+PieVal is a webapp that can present sensitive data.  If you wish to use PieVal, please work with Bill Riedl to set up a VM to host the app with appropriate Authentication (via UCDHS active directory).  Once the app is set up and congifured, please read the [following about how to create and manage projects](README_project_management.md)
 
 ## References
 
