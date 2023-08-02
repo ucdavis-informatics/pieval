@@ -4,11 +4,10 @@ PieVal is a WebApplication that runs on top of the following technologies (start
 
 1. Linux VM - This can be any flavor of linux supported at UCDHS that is capable of running Docker
 1. Apache/httpd - This is web server that runs on linux.  It must be configured with a UCDHS AD proxy to whatever port the webapplication is running on inside of Docker
-1. [Docker](https://www.docker.com/) - A technology for created isolated runtime environments.  The following technologies are packaged inside of a Docker container desinged to run this app
+1. [Docker](https://www.docker.com/) - A technology for creating isolated runtime environments.  The following technologies are packaged inside of a Docker container desinged to run this app:
     - [Gunicorn](https://gunicorn.org/) - A python WebApplication server.  It recieves requests that have been previously authenticated by Apache on the linux VM via a proxy
     - [Flask](https://flask.palletsprojects.com/en/2.2.x/) - Python WebApplication framework.  Handles web application routing, logic, and rendering inside the typical request/response lifecycle of the web
     - [PieVal Application Code](https://gitlab.ri.ucdavis.edu/ri/pydatautils/pieval) - The code that makes PieVal, PieVal
-
 
 
 The PieVal application needs to run in 2 different contexts:
@@ -22,7 +21,7 @@ These are very different in terms of what's required of the app.  It is currentl
 
 ## Development mode
 
-In thise mode the linux vm and apache/httpd (with associated auth) are irrelevant.  You will only be running from the Docker layer down through the application code.  To do this is pretty easy and takes only a few steps
+In this mode the linux vm and apache/httpd (with associated auth) are irrelevant.  You will only be running from the Docker layer down through the application code.  To do this is pretty easy and takes only a few steps
 
 #### Step 1 - build the docker container
 
@@ -57,3 +56,8 @@ This:
 ## Production Mode
 
 In order to run the app in production mode, please contact Bill Riedl at awriedl@ucdavis.edu in order to set up a secured/authed version of the app for you to use!
+
+Bill Riedl will help:
+1. Choose a Linux host on which to run the application (you must provide the host)
+1. Implement UCDH AD auth proxy using Apache httpd (web server)
+1. provision and launch PieVal codebase behind proxy established in step 2
