@@ -1,0 +1,29 @@
+# starts pieval webapp and associated mongo container - used to launch services for development purposes
+
+version: "3.8"
+
+networks:
+  net_pv:
+
+services:
+  pieval:
+    container_name: pieval
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "5001:5001"
+    volumes:
+      - .:/pieval
+    networks: 
+      - net_pv
+    command: python run.py
+    depends_on:
+      - mongo
+  mongo:
+    container_name: pv_mongo
+    image: mongo:6
+    expose:
+      - 27017
+    networks:
+      - net_pv

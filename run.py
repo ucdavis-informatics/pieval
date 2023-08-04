@@ -14,6 +14,9 @@ def create_app():
     time.sleep(random.uniform(0.2,1.5))
     app = wsgi.create_app()
     logger = logging.getLogger(app.config['LOGGER_NAME'])
+    logger.info("Logger Configured")
+    logger.info("Sleeping for 10 seconds to allow time for Mongo DB to come up before app initialization")
+    time.sleep(10)
     
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
