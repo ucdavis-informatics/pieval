@@ -10,13 +10,11 @@ import pandas as pd
 from datetime import datetime
 from random import shuffle
 import logging
-from functools import wraps
 
 # siblings
 from app.data_loader import (
     InvalidVaultTokenError, get_data_loader
 )
-from app.auth import logged_in
 
 pv_dl = None
 logger = None
@@ -56,7 +54,6 @@ def list_diff(l1, l2):
 # web events
 ####################################################################
 @bp.route("/")
-# @logged_in
 def pievalIndex():
     if not session.get('logged_in'):
         # if not logged in

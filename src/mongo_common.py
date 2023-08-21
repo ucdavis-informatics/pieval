@@ -48,17 +48,14 @@ def log_bulk_write_results(mongo_host, mongo_port, mongo_user, mongo_pass, mongo
         logger.info(msg) if logger else print(msg)
         my_mongo_db[mongo_log_collection].insert_one(bulk_res_df.to_dict(orient='split'))
 
-def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False, local=True):
-    if local:
-        return MongoClient()
-    else:
-        return MongoClient(host=mongo_connect_dict['host'],
-                               port=int(mongo_connect_dict['port']),
-                               username=mongo_connect_dict['user'],
-                               password=mongo_connect_dict['pass'],
-                               authSource=mongo_connect_dict['auth_source'],
-                               tls=tls_flag,
-                               tlsAllowInvalidCertificates=tlsAllowInvalidCertificates)
+def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False):
+    return MongoClient(host=mongo_connect_dict['host'],
+                            port=int(mongo_connect_dict['port']),
+                            username=mongo_connect_dict['user'],
+                            password=mongo_connect_dict['pass'],
+                            authSource=mongo_connect_dict['auth_source'],
+                            tls=tls_flag,
+                            tlsAllowInvalidCertificates=tlsAllowInvalidCertificates)
 
 
 def print_collection_sizes(notes_db):

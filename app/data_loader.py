@@ -13,6 +13,7 @@ from piesafe import piesafe
 from flask import current_app
 import logging
 import ucdripydbutils
+from pymongo import MongoClient
 
 ################################################################
 # classes
@@ -365,6 +366,71 @@ class DBDataLoader(object):
 
 
 #########################################################################
+## Mongo DB Data Loader
+#########################################################################
+class MongoDataLoader(object):
+    def __init__(self, mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name, mongo_tls_flag=False, mongo_allow_invalid_certs=True):
+        self.mongo_client = get_mongo_client(mongo_connect_dict, tls_flag=mongo_tls_flag, tlsAllowInvalidCertificates=mongo_allow_invalid_certs)
+        
+        self.pv_db = self.mongo_client[db_name]
+        self.user_collection = self.pv_db[user_collection_name]
+        self.project_collection = self.pv_db[project_collection_name]
+        self.project_data_collection = self.pv_db[project_data_collection_name]
+
+    def getUserData(self):
+        """
+        obtains user data from mongo database
+        """
+        res_cursor = self.user_collection.find({})
+        return list(res_cursor)
+    
+    def getProjects(self, project_name=''):
+        """
+        obtains project list from mongo database
+        Have this consume getProjectMetdata, Users, and Classes
+        """
+        if project_name:
+            res_cursor = self.project_collection.find({"project_name":{"$eq":project_name}})
+        else:
+            res_cursor = self.project_collection.find({})
+        return list(res_cursor)
+
+    def getProjectData(self, project_name, not_annotated_only=True):
+        """
+        obtains all data for a project - the substrate for annotation
+        """
+        if not_annotated_only:
+            res_cursor = self.project_data_collection.find({"project_name":{"$eq":project_name}, "label":{"$exists":False}})
+        else:
+            res_cursor = self.project_data_collection.find({"project_name":{"$eq":project_name}})
+        return list(res_cursor)
+
+    def saveAnnot(self, example, extra_feature_dict):
+        """
+        appends extra feature dict on to example based on _id
+        """
+        _id = example['_id']
+        self.project_data_collection.update_one({'_id':_id},{'$set':extra_feature_dict})
+        
+
+    def deleteAnnot(self, example):
+        """
+        deletes keys from example in the database
+        """
+        _id = example['_id']
+        self.project_data_collection.update_one({'_id':_id},{'$unset':{"label":1}})
+
+    
+
+    
+    
+
+    
+
+
+
+
+#########################################################################
 # functions
 #########################################################################
 def get_data_loader(type, path, image_dir, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
@@ -386,3 +452,13 @@ def get_data_loader(type, path, image_dir, v_role_id=None, v_sec_id=None, v_serv
         pv_dl = None
 
     return pv_dl
+
+
+def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False):
+    return MongoClient(host=mongo_connect_dict['host'],
+                               port=int(mongo_connect_dict['port']),
+                               username=mongo_connect_dict['user'],
+                               password=mongo_connect_dict['pass'],
+                               authSource=mongo_connect_dict['auth_source'],
+                               tls=tls_flag,
+                               tlsAllowInvalidCertificates=tlsAllowInvalidCertificates)
