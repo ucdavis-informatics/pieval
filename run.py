@@ -15,28 +15,6 @@ def create_app():
     app = wsgi.create_app()
     logger = logging.getLogger(app.config['LOGGER_NAME'])
     logger.info("Logger Configured")
-    logger.info("Sleeping for 10 seconds to allow time for Mongo DB to come up before app initialization")
-    time.sleep(10)
-    
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind(("127.0.0.1", 47201))
-    except socket.error:
-        logger.info("--- Neighboring services already started - DOING NOTHING ---")
-    else:
-        if app.config['RUN_MODE'] == 'dev':
-            logger.info("------ Bringing App up in DEV mode!!! ----------")
-            # here is where we should call the things that will 'autoconfigure' neighboring services with default params
-            # KeyCloak
-            # logger.info("Auto configuring KeyCloak with dev/demo accounts")
-            # config_keycloak.run(app.config['KC_USER'],
-            #                     app.config['KC_PASS'],
-            #                     app.config['KC_REALM_URL'],
-            #                     app.config['KC_TOK_URL'],
-            #                     app.config['KC_REALM_JSON'],
-            #                     app.config['KC_CLIENT_JSON'],
-            #                     app.config['KC_USER_JSON'],
-            #                     logger)
     return app
 
 

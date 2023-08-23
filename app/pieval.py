@@ -3,7 +3,7 @@ index.py - main app module for pieval.  Will put user on home page
 '''
 # Imports
 from flask import (
-    Blueprint, url_for, render_template, session, request, redirect, flash, current_app
+    Blueprint, url_for, render_template, session, request
 )
 from flask.helpers import send_from_directory
 import pandas as pd
@@ -24,13 +24,12 @@ bp = Blueprint('pieval', __name__, static_folder='static')
 # app init funcs
 # variables/dataloader/logger
 ##########################################################################
-def init_pv_dl(type, path, image_dir, v_role_id=None, v_sec_id=None, v_server=None, db_schema=None, logger=None):
+def init_pv_dl(mongo_connect_dict, db_name, user_collection_name, 
+               project_collection_name, project_data_collection_name,
+                logger=None):
     global pv_dl
-    pv_dl = get_data_loader(type, path, image_dir,
-                            v_role_id=v_role_id,
-                            v_sec_id=v_sec_id,
-                            v_server=v_server,
-                            db_schema=db_schema,
+    pv_dl = get_data_loader(type, mongo_connect_dict, db_name, user_collection_name, 
+                            project_collection_name, project_data_collection_name,
                             logger=logger)
 
 def init_logging(logger_name):
@@ -42,10 +41,10 @@ def init_logging(logger_name):
 ################################################################
 def checkAuthZ(project_name, user_name):
     try:
-        user_proj_list = pv_dl.getProjectUsers()[user_name]
+        user_proj_list = pv_dl.get_projects(user_name=user_name)
     except InvalidVaultTokenError:
         return render_template('bad_vault_token_bs.html')
-    return True if project_name in user_proj_list else False
+    return True if len(user_proj_list) > 0 else False
 
 def list_diff(l1, l2):
     return list(set(l1) - set(l2))
@@ -63,7 +62,7 @@ def pievalIndex():
         # user is logged in
         # user is returning to index, possibly after annotating
         # reset their state by conditionally clearing session vars
-        vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example','data_type']
+        vars_to_pop = ['cur_proj', 'project_mode', 'example_order', 'cur_example', 'prev_example','data_type','annot_id_list']
         for var in vars_to_pop:
             if var in session.keys():
                 session.pop(var)
@@ -71,9 +70,13 @@ def pievalIndex():
         logger.debug(f'Index session var is {session}')
         # get all projects for user
         try:
-            pieval_projects = pv_dl.getProjects(user_name=session['user_name'], return_as_dataframe = True)
-            data = pv_dl.getProjectData(return_as_dataframe=True)
-            prev_annots_for_user = pv_dl.getPriorAnnotations(user_name=session['user_name'], return_as_dataframe=True)
+            pieval_projects = pv_dl.get_projects(user_name=session['user_name'])
+            pieval_projects_df = pd.DataFrame(pieval_projects)
+            prj_data = pv_dl.get_project_data()
+            prj_data_df = pd.DataFrame(prj_data)
+            prev_annots = [x.get('annots') for x in prj_data if x.get('annots') is not None]
+            prev_annots_df = pd.DataFrame(prev_annots)
+            prev_annots_for_user = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']]
         except InvalidVaultTokenError as e:
             logger.error(f"Caught bad token error{e}")
             return render_template('bad_vault_token_bs.html')
@@ -85,7 +88,7 @@ def pievalIndex():
             return render_template('error_bs.html')
 
         # Assuming no exceptions: compute project stats
-        proj_example_counts = (data.groupby(['project_name'])
+        proj_example_counts = (prj_data_df.groupby(['project_name'])
                                    .size()
                                    .to_frame()
                                    .rename(columns={0:'num_examples'})
@@ -105,9 +108,9 @@ def pievalIndex():
         proj_status = proj_status.fillna(0)
 
         # join tables together
-        pieval_projects = pieval_projects.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
+        pieval_projects_df = pieval_projects_df.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
 
-        return render_template('index_bs.html', projects=pieval_projects.to_dict(orient='records'))
+        return render_template('index_bs.html', projects=pieval_projects_df.to_dict(orient='records'))
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -126,15 +129,18 @@ def project(project_name=None):
         if checkAuthZ(project_name, session['user_name']):
             # get project metadata
             try:
-                project_metadata = pv_dl.getProjectMetadata(project_name)
+                project_metadata = pv_dl.get_projects(project_name = project_name)
                 logger.debug(f'In project() function project metadata is: {project_metadata}')
                 # get all records for project and use it to set an order variable in the users session
-                project_data = pv_dl.getProjectData(project_name=project_name)
+                project_data = pv_dl.get_project_data(project_name)
+                prev_annots = [x.get('annots') for x in project_data if x.get('annots') is not None]
+                prev_annots_df = pd.DataFrame(prev_annots).dropna(subset='user_name')
+                prev_proj_annots_for_user_df = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']].copy()
                 # logger.debug(f'In project() Project data for {project_name} is {project_data}')
                 proj_example_list = [x['example_id'] for x in project_data]
 
                 # get prior annotations for this project
-                prev_proj_annots_for_user_df = pv_dl.getPriorAnnotations(project_name=project_name, return_as_dataframe=True)
+                # prev_proj_annots_for_user_df = pv_dl.getPriorAnnotations(project_name=project_name, return_as_dataframe=True)
                 if prev_proj_annots_for_user_df.shape[0] > 0:
                     project_leaderboard = (prev_proj_annots_for_user_df.groupby(['user_name']).size()
                                            .to_frame()
