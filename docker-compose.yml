@@ -7,7 +7,7 @@ networks:
 
 services:
   pieval:
-    container_name: pieval
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile
@@ -21,9 +21,11 @@ services:
     depends_on:
       - mongo
   mongo:
-    container_name: pv_mongo
+    restart: always
     image: mongo:6
-    expose:
-      - 27017
     networks:
       - net_pv
+    expose:
+      - 27017
+    ports:
+      - "27017:27017"

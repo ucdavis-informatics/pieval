@@ -1,14 +1,12 @@
 #!flask/bin/python
 # Import app variable from our app package
 import app.wsgi as wsgi
-import socket
 import time
 import random
 import logging
 import os
 from pathlib import Path
 from itertools import chain
-from docker_kc import config_keycloak
 
 def create_app():
     time.sleep(random.uniform(0.2,1.5))

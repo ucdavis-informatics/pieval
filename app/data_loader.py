@@ -56,13 +56,15 @@ class MongoDataLoader(object):
         res_cursor = self.project_collection.find(find_clause)
         return list(res_cursor)
 
-    def get_project_data(self, project_name='', not_annotated_only=False):
+    def get_project_data(self, project_name='', example_id=None, not_annotated_only=False):
         """
         obtains all data for a project - the substrate for annotation
         """
         find_clause = {}
         if project_name:
             find_clause['project_name'] = {"$eq":project_name}
+        if example_id:
+            find_clause['example_id'] = {"$eq":example_id}
         if not_annotated_only:
             find_clause["annots"] = {"$exists":False}
         res_cursor = self.project_data_collection.find(find_clause)
@@ -87,6 +89,7 @@ def get_data_loader(my_type, mongo_connect_dict, db_name, user_collection_name, 
 
 
 def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False):
+    # return MongoClient('mongo',27017)
     return MongoClient(host=mongo_connect_dict['host'],
                                port=int(mongo_connect_dict['port']),
                                username=mongo_connect_dict['user'],

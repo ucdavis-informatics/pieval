@@ -10,7 +10,7 @@ import pandas as pd
 from datetime import datetime
 from random import shuffle
 import logging
-
+import funcy
 # siblings
 from app.data_loader import (
     InvalidVaultTokenError, get_data_loader
@@ -70,13 +70,46 @@ def pievalIndex():
         logger.debug(f'Index session var is {session}')
         # get all projects for user
         try:
+            logger.debug(f"User Name = {session['user_name']}")
             pieval_projects = pv_dl.get_projects(user_name=session['user_name'])
             pieval_projects_df = pd.DataFrame(pieval_projects)
+            logger.debug(f"User project df has shape: {pieval_projects_df.shape}")
             prj_data = pv_dl.get_project_data()
             prj_data_df = pd.DataFrame(prj_data)
+            logger.debug(f"User project data df has shape: {prj_data_df.shape}")
             prev_annots = [x.get('annots') for x in prj_data if x.get('annots') is not None]
+            prev_annots = funcy.lflatten(prev_annots)
             prev_annots_df = pd.DataFrame(prev_annots)
-            prev_annots_for_user = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']]
+            logger.debug(f"Prev annots df has shape: {prev_annots_df.shape}")
+            print(prev_annots_df)
+            logger.debug(f"Prev annots df has shape: {prev_annots_df}")
+            if prev_annots_df.shape[0] > 0:
+                prev_annots_for_user = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']]
+                user_proj_counts = (prev_annots_for_user.groupby(['project_name'])
+                                   .size()
+                                   .to_frame()
+                                   .rename(columns={0:'num_annotated'})
+                                   .reset_index())
+                
+                proj_example_counts = (prj_data_df.groupby(['project_name'])
+                                        .size()
+                                        .to_frame()
+                                        .rename(columns={0:'num_examples'})
+                                        .reset_index())
+                
+                proj_status = pd.merge(proj_example_counts,
+                                    user_proj_counts,
+                                    on='project_name',
+                                    how='left')
+                proj_status['pct_complete'] = round( (proj_status['num_annotated'] / proj_status['num_examples']) * 100)
+                proj_status = proj_status.fillna(0)
+
+                # join tables together
+                pieval_projects_df = pieval_projects_df.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
+
+            else:
+                pieval_projects_df['pct_complete'] = 0
+
         except InvalidVaultTokenError as e:
             logger.error(f"Caught bad token error{e}")
             return render_template('bad_vault_token_bs.html')
@@ -88,28 +121,6 @@ def pievalIndex():
             return render_template('error_bs.html')
 
         # Assuming no exceptions: compute project stats
-        proj_example_counts = (prj_data_df.groupby(['project_name'])
-                                   .size()
-                                   .to_frame()
-                                   .rename(columns={0:'num_examples'})
-                                   .reset_index())
-
-        user_proj_counts = (prev_annots_for_user.groupby(['project_name'])
-                                   .size()
-                                   .to_frame()
-                                   .rename(columns={0:'num_annotated'})
-                                   .reset_index())
-
-        proj_status = pd.merge(proj_example_counts,
-                               user_proj_counts,
-                               on='project_name',
-                               how='left')
-        proj_status['pct_complete'] = round( (proj_status['num_annotated'] / proj_status['num_examples']) * 100)
-        proj_status = proj_status.fillna(0)
-
-        # join tables together
-        pieval_projects_df = pieval_projects_df.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
-
         return render_template('index_bs.html', projects=pieval_projects_df.to_dict(orient='records'))
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -129,18 +140,24 @@ def project(project_name=None):
         if checkAuthZ(project_name, session['user_name']):
             # get project metadata
             try:
-                project_metadata = pv_dl.get_projects(project_name = project_name)
+                project_metadata = pv_dl.get_projects(project_name = project_name)[0]
                 logger.debug(f'In project() function project metadata is: {project_metadata}')
                 # get all records for project and use it to set an order variable in the users session
                 project_data = pv_dl.get_project_data(project_name)
-                prev_annots = [x.get('annots') for x in project_data if x.get('annots') is not None]
-                prev_annots_df = pd.DataFrame(prev_annots).dropna(subset='user_name')
-                prev_proj_annots_for_user_df = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']].copy()
-                # logger.debug(f'In project() Project data for {project_name} is {project_data}')
                 proj_example_list = [x['example_id'] for x in project_data]
+                prev_annots = [x.get('annots') for x in project_data if x.get('annots') is not None]
+                prev_annots = funcy.lflatten(prev_annots)
+                prev_annots_df = pd.DataFrame(prev_annots)
+                if prev_annots_df.empty:
+                    prev_proj_annots_for_user_df = pd.DataFrame()
+                    prior_example_list = []
+                else:
+                    prev_proj_annots_for_user_df = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']].copy()
+                    logger.debug(f"IN PROJECT :: prev annots for user df = {prev_proj_annots_for_user_df}")
+                    prev_proj_annots_for_user = prev_proj_annots_for_user_df.loc[prev_proj_annots_for_user_df['user_name']==session['user_name']].to_dict(orient='records')
+                    prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
+                
 
-                # get prior annotations for this project
-                # prev_proj_annots_for_user_df = pv_dl.getPriorAnnotations(project_name=project_name, return_as_dataframe=True)
                 if prev_proj_annots_for_user_df.shape[0] > 0:
                     project_leaderboard = (prev_proj_annots_for_user_df.groupby(['user_name']).size()
                                            .to_frame()
@@ -159,9 +176,6 @@ def project(project_name=None):
                     project_leaderboard = pd.DataFrame()
 
                 project_leaderboard = project_leaderboard.to_dict(orient='records')
-
-                prev_proj_annots_for_user = prev_proj_annots_for_user_df.loc[prev_proj_annots_for_user_df['user_name']==session['user_name']].to_dict(orient='records')
-                prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
 
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token_bs.html')
@@ -198,9 +212,8 @@ def annotate_example(doh='no'):
                 session['cur_example'] = session['prev_example']
                 session['example_order'] = session['example_order'] + [session['cur_example']]
                 try:
-                    one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
-                    # remove existing annotation from database, before re-adding
-                    pv_dl.deleteAnnot(session['cur_proj'], session['user_name'], session['cur_example'])
+                    one_example = pv_dl.get_project_data(project_name=session['cur_proj'], example_id=session['cur_example'])[0]
+                    logger.debug(f"In annotate example: One Example = {one_example}")
                 except InvalidVaultTokenError:
                     return render_template('bad_vault_token_bs.html')
                 return render_template('annotation_bs.html', one_example=one_example, data_type=session['data_type'])
@@ -215,7 +228,8 @@ def annotate_example(doh='no'):
             session['cur_example'] = example_idx
             logger.debug(f"In annotate_example() session: {session}")
             try:
-                one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
+                one_example = pv_dl.get_project_data(project_name=session['cur_proj'], example_id=session['cur_example'])[0]
+                logger.debug(f"In annotate example: One Example = {one_example}")
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token_bs.html')
             # return annotation template with a single example
@@ -234,10 +248,11 @@ def get_multiclass_annotation(context_viewed='no'):
     if checkAuthZ(session['cur_proj'], session['user_name']):
         # get current example
         try:
-            one_example = pv_dl.getProjectData(project_name=session['cur_proj'], example_id=session['cur_example'])
+            one_example = pv_dl.get_project_data(project_name=session['cur_proj'], example_id=session['cur_example'])[0]
             logger.debug(f"In get_multiclass_annotation() one_example = {one_example}")
             # get project classes
-            proj_classes = pv_dl.getProjectClasses(project_name=session['cur_proj'])
+            project_metadata = pv_dl.get_projects(project_name=session['cur_proj'])[0]
+            proj_classes = project_metadata['class_list']
             logger.debug(f"In get_multiclass_annotation() proj_classes = {proj_classes}")
         except InvalidVaultTokenError:
             return render_template('bad_vault_token_bs.html')
@@ -266,22 +281,48 @@ def record_annotation():
         user_ip = request.remote_addr
         cur_time = datetime.now().replace(microsecond=0)
 
+        one_example = pv_dl.get_project_data(project_name=cur_proj, example_id=cur_example)[0]
+        
         if project_mode == 'multiclass' and response == 'disagree':
             # get class specification
             return get_multiclass_annotation(context_viewed=context_viewed)
         else:
             # transact annotation event to persistence layer
             try:
-                # if pv_dl is None:
-                #     pv_dl = get_data_loader()
-                # record annotation
-                pv_dl.saveAnnot(cur_time,
-                          cur_proj,
-                          user_name,
-                          user_ip,
-                          cur_example,
-                          response,
-                          context_viewed)
+                if 'annots' in one_example:
+                    print("There are prior annotations!")
+                    # in this case grab the current annot array
+                    annot_array = one_example['annots']
+                    max_annot_id = max([x['annot_id'] for x in annot_array])
+                    one_annot = {
+                        'project_name':cur_proj,
+                        'annot_id':max_annot_id+1,
+                        'example_id':cur_example,
+                        'response_time':cur_time,
+                        'user_name':user_name,
+                        'user_ip':user_ip,
+                        'response':response,
+                        'context_viewed':context_viewed
+                    }
+                    annot_array.append(one_annot)
+                else:
+                    print("There are no prior annotations")
+                    # in this case create a new annot array
+                    one_annot = {
+                        'project_name':cur_proj,
+                        'annot_id':0,
+                        'example_id':cur_example,
+                        'response_time':cur_time,
+                        'user_name':user_name,
+                        'user_ip':user_ip,
+                        'response':response,
+                        'context_viewed':context_viewed
+                    }    
+                    annot_array = [one_annot]
+
+                extra_feature_dict = {'annots':annot_array}
+                pv_dl.update_example(one_example, extra_feature_dict)
+
             except InvalidVaultTokenError:
                 return render_template('bad_vault_token_bs.html')
             # update session variable by removing this object from their list
