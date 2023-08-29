@@ -77,19 +77,29 @@ def pievalIndex():
             prj_data = pv_dl.get_project_data()
             prj_data_df = pd.DataFrame(prj_data)
             logger.debug(f"User project data df has shape: {prj_data_df.shape}")
-            prev_annots = [x.get('annots') for x in prj_data if x.get('annots') is not None]
-            prev_annots = funcy.lflatten(prev_annots)
-            prev_annots_df = pd.DataFrame(prev_annots)
-            logger.debug(f"Prev annots df has shape: {prev_annots_df.shape}")
-            print(prev_annots_df)
-            logger.debug(f"Prev annots df has shape: {prev_annots_df}")
-            if prev_annots_df.shape[0] > 0:
-                prev_annots_for_user = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']]
-                user_proj_counts = (prev_annots_for_user.groupby(['project_name'])
-                                   .size()
-                                   .to_frame()
-                                   .rename(columns={0:'num_annotated'})
-                                   .reset_index())
+
+            #########################
+            # dealing with previous annotations
+            #########################
+            if 'annots' in prj_data_df.columns:
+                prj_data_annots = prj_data_df.explode('annots').reset_index(drop=True)
+                logger.info(f"There are {prj_data_annots.shape} total examples for this project")
+                
+                prj_data_annots_final = prj_data_annots.join(prj_data_annots['annots'].apply(pd.Series))
+                logger.info(f"There are {prj_data_annots_final.shape} total annotations for this project")
+                
+                user_annots = prj_data_annots_final.loc[prj_data_annots_final['user_name'] == session['user_name']]
+
+            else:
+                user_annots = pd.DataFrame()
+                print("No annots for this project")
+
+            if user_annots.shape[0] > 0:
+                user_proj_counts = (user_annots.groupby(['project_name'])
+                                .size()
+                                .to_frame()
+                                .rename(columns={0:'num_annotated'})
+                                .reset_index())
                 
                 proj_example_counts = (prj_data_df.groupby(['project_name'])
                                         .size()
@@ -106,7 +116,7 @@ def pievalIndex():
 
                 # join tables together
                 pieval_projects_df = pieval_projects_df.merge(proj_status.filter(['project_name','pct_complete']), on='project_name', how='left')
-
+                
             else:
                 pieval_projects_df['pct_complete'] = 0
 
@@ -143,23 +153,30 @@ def project(project_name=None):
                 project_metadata = pv_dl.get_projects(project_name = project_name)[0]
                 logger.debug(f'In project() function project metadata is: {project_metadata}')
                 # get all records for project and use it to set an order variable in the users session
-                project_data = pv_dl.get_project_data(project_name)
-                proj_example_list = [x['example_id'] for x in project_data]
-                prev_annots = [x.get('annots') for x in project_data if x.get('annots') is not None]
-                prev_annots = funcy.lflatten(prev_annots)
-                prev_annots_df = pd.DataFrame(prev_annots)
-                if prev_annots_df.empty:
-                    prev_proj_annots_for_user_df = pd.DataFrame()
-                    prior_example_list = []
-                else:
-                    prev_proj_annots_for_user_df = prev_annots_df.loc[prev_annots_df['user_name'] == session['user_name']].copy()
-                    logger.debug(f"IN PROJECT :: prev annots for user df = {prev_proj_annots_for_user_df}")
-                    prev_proj_annots_for_user = prev_proj_annots_for_user_df.loc[prev_proj_annots_for_user_df['user_name']==session['user_name']].to_dict(orient='records')
-                    prior_example_list = [x['example_id'] for x in prev_proj_annots_for_user]
-                
+                prj_data = pv_dl.get_project_data(project_name)
+                prj_data_df = pd.DataFrame(prj_data)
+                proj_example_list = [x['example_id'] for x in prj_data]
 
-                if prev_proj_annots_for_user_df.shape[0] > 0:
-                    project_leaderboard = (prev_proj_annots_for_user_df.groupby(['user_name']).size()
+                ########################
+                # dealing with previous annotations
+                ########################
+                if 'annots' in prj_data_df.columns:
+                    prj_data_annots = prj_data_df.explode('annots').reset_index(drop=True)
+                    logger.info(f"project :: There are {prj_data_annots.shape} total examples for this project")
+                    
+                    prj_data_annots_final = prj_data_annots.join(prj_data_annots['annots'].apply(pd.Series))
+                    logger.info(f"project :: There are {prj_data_annots_final.shape} total annotations for this project")
+                    
+                    user_annots = prj_data_annots_final.loc[prj_data_annots_final['user_name'] == session['user_name']]
+
+                    prior_example_list = user_annots['example_id'].unique().tolist()
+                else:
+                    user_annots = pd.DataFrame()
+                    prior_example_list = []
+                    logger.info("project :: No annots for this project")      
+
+                if user_annots.shape[0] > 0:
+                    project_leaderboard = (prj_data_annots_final.groupby(['user_name']).size()
                                            .to_frame()
                                            .rename(columns={0: 'annotation_count'})
                                            .sort_values(['annotation_count'], ascending=False)
@@ -295,9 +312,9 @@ def record_annotation():
                     annot_array = one_example['annots']
                     max_annot_id = max([x['annot_id'] for x in annot_array])
                     one_annot = {
-                        'project_name':cur_proj,
-                        'annot_id':max_annot_id+1,
-                        'example_id':cur_example,
+                        # 'project_name':cur_proj,
+                        # 'example_id':cur_example,
+                        'annot_id':max_annot_id+1,                        
                         'response_time':cur_time,
                         'user_name':user_name,
                         'user_ip':user_ip,
@@ -309,9 +326,9 @@ def record_annotation():
                     print("There are no prior annotations")
                     # in this case create a new annot array
                     one_annot = {
-                        'project_name':cur_proj,
-                        'annot_id':0,
-                        'example_id':cur_example,
+                        # 'project_name':cur_proj,
+                        # 'example_id':cur_example,
+                        'annot_id':0,                        
                         'response_time':cur_time,
                         'user_name':user_name,
                         'user_ip':user_ip,

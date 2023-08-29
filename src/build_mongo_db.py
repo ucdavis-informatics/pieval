@@ -12,30 +12,16 @@ import numpy as np
 import pandas as pd
 from pymongo import UpdateOne, MongoClient
 
-from mongo_common import print_collection_sizes, get_mongo_client
+try:
+    from mongo_common import print_collection_sizes, get_mongo_client
+except ModuleNotFoundError:
+    from src.mongo_common import print_collection_sizes, get_mongo_client
 
 
 #########################################
 # func defs
 #########################################
-
-
-#########################################
-# main
-#########################################
-def main():
-    print("Hi there!  I'm going to build out a mongo database for use with PieVal")
-
-    # Pre -req stuff - Mongo Client
-    local_connect_dict = {
-        "host":"localhost",
-        "port":27017,
-        "user":'',
-        "pass":'',
-        "auth_source":''
-    }
-    mongo_client = get_mongo_client(local_connect_dict, tls_flag=False, tlsAllowInvalidCertificates=True)
-
+def run(mongo_client):
     # Test client by reading out current database names
     print(mongo_client.list_database_names())
     if 'pv_db' in mongo_client.list_database_names():
@@ -50,14 +36,31 @@ def main():
     
 
     # Step 1 - load up example data from csv files
-    proj_classes_df = pd.read_csv('../example_database/project_classes.csv')
-    proj_users = pd.read_csv('../example_database/project_users.csv')
-    proj_df = pd.read_csv('../example_database/projects.csv')
+    try:
+        proj_classes_df = pd.read_csv('../example_database/project_classes.csv')
+    except FileNotFoundError:
+        proj_classes_df = pd.read_csv('example_database/project_classes.csv')
+
+    try:
+        proj_users = pd.read_csv('../example_database/project_users.csv')
+    except FileNotFoundError:
+        proj_users = pd.read_csv('example_database/project_users.csv')
+
+    try:
+        proj_df = pd.read_csv('../example_database/projects.csv')
+    except FileNotFoundError:
+        proj_df = pd.read_csv('example_database/projects.csv')
 
     # project data - the documents
-    proj_data_df = pd.read_csv('../example_database/project_data.csv')
+    try:
+        proj_data_df = pd.read_csv('../example_database/project_data.csv')
+    except FileNotFoundError:
+        proj_data_df = pd.read_csv('example_database/project_data.csv')
     # user information
-    user_df = pd.read_csv('../example_database/user_details.csv')
+    try:
+        user_df = pd.read_csv('../example_database/user_details.csv')
+    except:
+        user_df = pd.read_csv('example_database/user_details.csv')
 
     #######################
     # project Data
@@ -148,6 +151,27 @@ def main():
     bulk_res = pv_db['users'].bulk_write(user_upserts)
     bulk_api_result_dict = bulk_res.bulk_api_result
     print(bulk_api_result_dict)
+
+
+#########################################
+# main
+#########################################
+def main():
+    print("Hi there!  I'm going to build out a mongo database for use with PieVal")
+
+    # Pre -req stuff - Mongo Client
+    local_connect_dict = {
+        "host":"localhost",
+        "port":27017,
+        "user":'',
+        "pass":'',
+        "auth_source":''
+    }
+    mongo_client = get_mongo_client(local_connect_dict, tls_flag=False, tlsAllowInvalidCertificates=True)
+
+    print("Calling Run!")
+    run(mongo_client)
+    
 
 
 if __name__ == "__main__":
