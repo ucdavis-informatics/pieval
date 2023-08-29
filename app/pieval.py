@@ -229,7 +229,19 @@ def annotate_example(doh='no'):
                 session['cur_example'] = session['prev_example']
                 session['example_order'] = session['example_order'] + [session['cur_example']]
                 try:
+                    # this line recalls the example that we are 'doh!'ing' back to
                     one_example = pv_dl.get_project_data(project_name=session['cur_proj'], example_id=session['cur_example'])[0]
+                    # need code here that removes previously obtained annotation
+                    # Making the assumption that one user can ONLY annotate any specific example ONE time
+                    # under this assumption, we can delete any/all previous annoations for the current user - which should only be one
+                    # TODO - write code that deletes current users previous annotations associated with one example
+                    if 'annots' in one_example:
+                        logger.info(f"annotate_example :: deleting previous annots for {session['user_name']} on example {session['cur_example']} in project {session['cur_proj']}")
+                        new_annots = [x for x in one_example['annots'] if x['user_name'] != session['user_name']]
+                        pv_dl.update_example(one_example, {'annots':new_annots})
+                    else:
+                        logger.info("annotate_example :: no previous annotations to delete!")
+
                     logger.debug(f"In annotate example: One Example = {one_example}")
                 except InvalidVaultTokenError:
                     return render_template('bad_vault_token_bs.html')
@@ -310,11 +322,16 @@ def record_annotation():
                     print("There are prior annotations!")
                     # in this case grab the current annot array
                     annot_array = one_example['annots']
-                    max_annot_id = max([x['annot_id'] for x in annot_array])
+                    try:
+                        # hacky way to handle the case that someone "doh!'d" leaving annots as an empty list
+                        max_annot_id = max([x['annot_id'] for x in annot_array])
+                        new_annot_id = max_annot_id + 1
+                    except ValueError:
+                        new_annot_id = 0
                     one_annot = {
                         # 'project_name':cur_proj,
                         # 'example_id':cur_example,
-                        'annot_id':max_annot_id+1,                        
+                        'annot_id':new_annot_id,                        
                         'response_time':cur_time,
                         'user_name':user_name,
                         'user_ip':user_ip,
