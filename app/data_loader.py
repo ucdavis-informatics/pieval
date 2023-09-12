@@ -23,7 +23,8 @@ class MongoDataLoader(object):
     Data Access interface between pieval app and a mongo database
     """
     def __init__(self, mongo_connect_dict, db_name, user_collection_name, project_collection_name, 
-                 project_data_collection_name, mongo_tls_flag=False, mongo_allow_invalid_certs=True):
+                 project_data_collection_name, mongo_tls_flag=False, mongo_allow_invalid_certs=True,
+                 image_dir = None):
         """
         initialize a data loader
         """
@@ -34,6 +35,8 @@ class MongoDataLoader(object):
         self.user_collection = self.pv_db[user_collection_name]
         self.project_collection = self.pv_db[project_collection_name]
         self.project_data_collection = self.pv_db[project_data_collection_name]
+        # currently not in use but working to restore image functionality
+        self.image_dir = image_dir
 
     def get_user_data(self):
         """
@@ -82,9 +85,9 @@ class MongoDataLoader(object):
 #########################################################################
 def get_data_loader(my_type, mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name,logger=None,
                     mongo_tls_flag=False, mongo_allow_invalid_certs=True):
-    logger.info("Obtaining a PieVal Data Loader with type {}".format(my_type)) if logger else print("No logger")
+    logger.info("Obtaining a PieVal Data Loader with type {}".format(my_type))
     pv_dl = MongoDataLoader(mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name,
-                            mongo_tls_flag=False, mongo_allow_invalid_certs=True)
+                            mongo_tls_flag=mongo_tls_flag, mongo_allow_invalid_certs=mongo_allow_invalid_certs)
     return pv_dl
 
 

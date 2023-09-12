@@ -29,7 +29,8 @@ To alter which instance we are wired into we need only to change the point to th
 The contents of this file contains pointers to the correct instance
 """
 ##################
-RUN_MODE='dev' # 'prod'
+RUN_MODE='dev'
+# RUN_MODE='dev'
 
 #################
 # Data source config

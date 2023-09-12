@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Welcome to PieVal - We're sorry but something went wrong</h1>
-    <p>Please report this to the cdi3 team at CDI3@groups.ucdavis.edu right away - Thanks!</p>
+    <h1>Welcome to PieVal - We're sorry but something went wrong</h1>
+    <p>Please report the following message to your web admin right away - Thanks!</p>
+    {%  if error_msg|length > 0 %}
+            <p>{{error_msg}}</p>
+    {% endif %}
 {% endblock %}
