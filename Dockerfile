@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.8.6-buster
+FROM --platform=linux/amd64 python:3.10-bullseye
 
 WORKDIR /pieval
 

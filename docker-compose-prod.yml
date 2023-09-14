@@ -1,0 +1,31 @@
+# starts pieval webapp and associated mongo container - used to launch services for development purposes
+
+version: "3.8"
+
+networks:
+  net_pv:
+
+services:
+  pieval:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "5001:5001"
+    volumes:
+      - .:/pieval
+    networks: 
+      - net_pv
+    command: gunicorn --preload -w 4 -b 0.0.0.0:5001 "app.wsgi:create_app()"
+    depends_on:
+      - mongo
+  mongo:
+    restart: always
+    image: mongo:6
+    networks:
+      - net_pv
+    expose:
+      - 27017
+    ports:
+      - "27017:27017"

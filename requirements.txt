@@ -9,7 +9,3 @@ nbformat==5.0.8
 mkdocs==1.3.0
 mkdocstrings==0.18.1
 mkdocstrings-python==0.6.6
-
---extra-index-url https://repos.ri.ucdavis.edu/python
-ucd-ri-pydbutils==2.0.0
-piesafe==1.2.0
