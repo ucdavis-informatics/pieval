@@ -23,9 +23,10 @@ import pandas as pd
 import funcy
 
 # siblings
-from app.data_loader import (
-    get_data_loader
-)
+try:
+    from app.data_loader import get_data_loader
+except ModuleNotFoundError:
+    from data_loader import get_data_loader
 
 # initializing global vars
 # @TODO - see if we can remove globals - not high priority but nice to have
@@ -89,7 +90,7 @@ def login():
     'dev' and 'prod' modes - please see docs for clarification
     """
     if request.method == 'POST':
-        if current_app.config['RUN_MODE'] == 'dev':
+        if current_app.config['AUTH_ENABLED'] == 'no':
             user_name = request.form['user_name']
             session['logged_in'] = True
             session['user_name'] = user_name
@@ -97,7 +98,7 @@ def login():
         else:
             return render_template('error_bs.html')
     if request.method == 'GET':
-        if current_app.config['RUN_MODE'] == 'dev':
+        if current_app.config['AUTH_ENABLED'] == 'no':
             return render_template('login.html')
         else:
             # check to see if some iteration of remote user is in the headers

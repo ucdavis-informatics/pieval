@@ -18,7 +18,6 @@ def create_app():
     return app
 
 def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False):
-    # return MongoClient('mongo',27017)
     return MongoClient(host=mongo_connect_dict['host'],
                                port=int(mongo_connect_dict['port']),
                                username=mongo_connect_dict['user'],

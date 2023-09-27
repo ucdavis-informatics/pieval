@@ -1,8 +1,29 @@
-from flask import Flask
+"""
+Author: Bill Riedl
+Date: 2023-09-27
+Purpose: Entry point into pieval app
+"""
+
+from itertools import chain
+import os
+from pathlib import Path
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from flask import Flask
 
-from app import pieval
+# siblings
+try:
+    from app import pieval
+except ModuleNotFoundError:
+    import pieval
+try:
+    from app import data_loader
+except ModuleNotFoundError:
+    import data_loader
+try:
+    from app import build_mongo_db
+except ModuleNotFoundError:
+    import build_mongo_db
 
 def create_app():
     # CREATE APP OBJECT
@@ -23,15 +44,15 @@ def create_app():
     ch = logging.StreamHandler()
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+    logger.info("Logger Configured")
 
-    # add auth
-    # logger.info("Configuring OIDC auth layer")
-    # auth.oidc.init_app(app)
+    logger.info("Registering which auth mode the app is in: ")
+    app.config['AUTH_ENABLED'] = os.environ.get('AUTH_ENABLED')
+    logger.info("App AUTH MODE is %s", app.config['AUTH_ENABLED'])
 
     # register blueprints
     logger.info("Registerting blueprints")
     app.register_blueprint(pieval.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
-    # app.register_blueprint(auth.bp, url_prefix=app.config['BLUEPRINT_URL_PREFIX'])
     app.secret_key = app.config['SECRET_KEY']
 
     # initialize logger(s) in app files with logger name so they all get a handle to the same logger
@@ -48,3 +69,29 @@ def create_app():
 
     return app
 
+
+def main():
+    # DEVELOPMENT (Internal-facing, Debug on)
+    os.environ['FLASK_ENV']='development'
+
+    app = create_app()
+    logger = logging.getLogger(app.config['LOGGER_NAME'])
+    logger.info("App created")
+    app.app_context().push()
+    logger.info("App context pushed")
+
+    logger.info("Configuring mongo db skeleton")
+    # create mongo db skeleton
+    mongo_client = data_loader.get_mongo_client(app.config['MONGO_CONNECT_DICT'], tls_flag=False, tlsAllowInvalidCertificates=True)
+    build_mongo_db.run(mongo_client)
+
+    logger.info("Running App")
+    app.run(debug=True,
+            host='0.0.0.0',
+            port=5001,
+            extra_files=chain(Path.cwd().joinpath('app/templates').rglob('*.html'),
+                                Path.cwd().joinpath('app/static/styles').rglob('*.css'))
+            )
+
+if __name__ == '__main__':
+    main()

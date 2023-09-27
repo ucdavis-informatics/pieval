@@ -92,7 +92,6 @@ def get_data_loader(my_type, mongo_connect_dict, db_name, user_collection_name, 
 
 
 def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False):
-    # return MongoClient('mongo',27017)
     return MongoClient(host=mongo_connect_dict['host'],
                                port=int(mongo_connect_dict['port']),
                                username=mongo_connect_dict['user'],

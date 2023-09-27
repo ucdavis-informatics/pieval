@@ -10,7 +10,7 @@ versions of this script will load the example data whether you like it or not.
 #########################################
 import numpy as np
 import pandas as pd
-from pymongo import UpdateOne, MongoClient
+from pymongo import UpdateOne
 
 try:
     from mongo_common import print_collection_sizes, get_mongo_client
@@ -59,7 +59,7 @@ def run(mongo_client):
     # user information
     try:
         user_df = pd.read_csv('../example_database/user_details.csv')
-    except:
+    except FileNotFoundError:
         user_df = pd.read_csv('example_database/user_details.csv')
 
     #######################
