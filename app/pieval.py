@@ -23,10 +23,7 @@ import pandas as pd
 import funcy
 
 # siblings
-try:
-    from app.data_loader import get_data_loader
-except ModuleNotFoundError:
-    from data_loader import get_data_loader
+from app import data_loader
 
 # initializing global vars
 # @TODO - see if we can remove globals - not high priority but nice to have
@@ -44,12 +41,10 @@ def init_logging(logger_name):
 
 
 def init_pv_dl(mongo_connect_dict, db_name, user_collection_name, 
-               project_collection_name, project_data_collection_name,
-                logger=logger):
+               project_collection_name, project_data_collection_name, image_dir=None):
     global pv_dl
-    pv_dl = get_data_loader(type, mongo_connect_dict, db_name, user_collection_name, 
-                            project_collection_name, project_data_collection_name,
-                            logger=logger)
+    pv_dl = data_loader.MongoDataLoader(mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name, logger,
+                                        image_dir=image_dir)
 
 ################################################################
 # Functions

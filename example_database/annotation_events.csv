@@ -1,8 +1,0 @@
-response_time,project_name,user_name,user_ip,example_id,response,context_viewed
-2023-03-08 18:16:03,movie_reviews_demo,pieval,172.17.0.1,18,agree,yes
-2023-03-08 18:17:10,movie_reviews_demo,pieval,172.17.0.1,9,agree,no
-2023-03-08 18:17:16,movie_reviews_demo,pieval,172.17.0.1,13,agree,no
-2023-03-08 18:22:42,kappa_lambda_demo,pieval,172.17.0.1,3,disagree,no
-2023-04-14 18:53:59,cncr_hist_mc_demo,pieval,172.17.0.1,6,agree,yes
-2023-04-14 18:54:11,cncr_hist_mc_demo,pieval,172.17.0.1,4,squamous cell,no
-2023-04-14 18:54:13,cncr_hist_mc_demo,pieval,172.17.0.1,5,review,no

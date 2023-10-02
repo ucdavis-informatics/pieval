@@ -22,21 +22,39 @@ class MongoDataLoader(object):
     """
     Data Access interface between pieval app and a mongo database
     """
-    def __init__(self, mongo_connect_dict, db_name, user_collection_name, project_collection_name, 
-                 project_data_collection_name, mongo_tls_flag=False, mongo_allow_invalid_certs=True,
+    def __init__(self, mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name, logger,
+                 mongo_tls_flag=False,
+                 mongo_allow_invalid_certs=True,
                  image_dir = None):
         """
         initialize a data loader
         """
+        self.logger = logger
         self.mongo_client = get_mongo_client(mongo_connect_dict, 
                                              tls_flag=mongo_tls_flag,
                                              tlsAllowInvalidCertificates=mongo_allow_invalid_certs)
-        self.pv_db = self.mongo_client[db_name]
+        
+        self.pv_db = None
+        # sets self.pv_db to not None
+        self.check_db(db_name, user_collection_name, project_collection_name, project_data_collection_name)
+
+        # establishes some shortcuts
         self.user_collection = self.pv_db[user_collection_name]
         self.project_collection = self.pv_db[project_collection_name]
         self.project_data_collection = self.pv_db[project_data_collection_name]
         # currently not in use but working to restore image functionality
         self.image_dir = image_dir
+
+    def check_db(self, db_name, user_collection_name, project_collection_name, project_data_collection_name):
+        if db_name in self.mongo_client.list_database_names():
+            self.logger.info("Database already exists")
+            self.pv_db = self.mongo_client[db_name]
+        else:
+            self.logger.info('Creating pv_db database')
+            self.pv_db = self.mongo_client[db_name]
+            self.pv_db.create_collection(user_collection_name)
+            self.pv_db.create_collection(project_collection_name)
+            self.pv_db.create_collection(project_data_collection_name)
 
     def get_user_data(self):
         """
@@ -83,14 +101,6 @@ class MongoDataLoader(object):
 #########################################################################
 # functions
 #########################################################################
-def get_data_loader(my_type, mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name,logger=None,
-                    mongo_tls_flag=False, mongo_allow_invalid_certs=True):
-    logger.info("Obtaining a PieVal Data Loader with type {}".format(my_type))
-    pv_dl = MongoDataLoader(mongo_connect_dict, db_name, user_collection_name, project_collection_name, project_data_collection_name,
-                            mongo_tls_flag=mongo_tls_flag, mongo_allow_invalid_certs=mongo_allow_invalid_certs)
-    return pv_dl
-
-
 def get_mongo_client(mongo_connect_dict, tls_flag=True, tlsAllowInvalidCertificates=False):
     return MongoClient(host=mongo_connect_dict['host'],
                                port=int(mongo_connect_dict['port']),

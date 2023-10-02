@@ -19,7 +19,7 @@ services:
       - net_pv
     environment:
       - AUTH_ENABLED=no
-    command: python app/wsgi.py
+    command: python run.py
     depends_on:
       - mongo
   mongo:

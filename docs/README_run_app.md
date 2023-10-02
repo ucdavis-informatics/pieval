@@ -27,6 +27,7 @@ Docker Compose is used to launch the app in either context.
 In this mode the linux vm and apache/httpd (with associated auth) are irrelevant.  You will only be running from the Docker layer down through the application code.  It only takes one command to launch the app in dev mode:
 
 ```sh
+# must be run from pieval/ repo root directory
 docker compose -f docker-compose-dev.yml up
 ```
 
@@ -46,6 +47,7 @@ When you are done, please be sure to shut down the app gracefully:
 
 ```sh
 # two steps
+# must be run from pieval/ repo root directory
 ctrl+'c'
 docker compose -f docker-compose-dev.yml down
 ```
@@ -62,6 +64,7 @@ Bill Riedl will help:
 
 
 ```sh
+# Must be run from pieval/ repo root directory
 docker compose -f docker-compose-prod.yml up -d
 ```
 
@@ -70,5 +73,6 @@ And to bring it down
 
 
 ```sh
+# must be run from pieval/ repo root directory
 docker compose -f docker-compose-prod.yml down 
 ```

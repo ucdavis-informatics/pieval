@@ -1,0 +1,29 @@
+[
+    {
+        "_id":"test_create_0",
+        "project_name":"test_create",
+        "source_id":"1111",
+        "example_id":"0",
+        "data":"This is the zeroth example in the test create project",
+        "data_ext":"This is the zeroth example in the test create project and the buffalo bills are the greatest football team ever",
+        "prompt":"Buffalo Bills are the greatest NFL team"
+    },
+    {
+        "_id":"test_create_1",
+        "project_name":"test_create",
+        "source_id":"1112",
+        "example_id":"1",
+        "data":"This is the first example in the test create project",
+        "data_ext":"This is the first example in the test create project and the buffalo bills are the greatest football team ever",
+        "prompt":"Buffalo Bills are the greatest NFL team"
+    },
+    {
+        "_id":"test_create_2",
+        "project_name":"test_create",
+        "source_id":"1113",
+        "example_id":"2",
+        "data":"This is the second example in the test create project",
+        "data_ext":"This is the second example in the test create project and the buffalo bills are the greatest football team ever",
+        "prompt":"Buffalo Bills are the greatest NFL team"
+    }
+]

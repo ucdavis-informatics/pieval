@@ -1,0 +1,11 @@
+[
+    {
+        "_id":"test_create",
+        "project_name":"test_create",
+        "project_description":"Fake data for testing the project create script",
+        "project_mode":"binary",
+        "data_type":"text",
+        "class_list":[],
+        "user_list":["pieval"]
+    }
+]

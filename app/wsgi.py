@@ -12,18 +12,8 @@ from logging.handlers import TimedRotatingFileHandler
 from flask import Flask
 
 # siblings
-try:
-    from app import pieval
-except ModuleNotFoundError:
-    import pieval
-try:
-    from app import data_loader
-except ModuleNotFoundError:
-    import data_loader
-try:
-    from app import build_mongo_db
-except ModuleNotFoundError:
-    import build_mongo_db
+from app import pieval
+from app import data_loader
 
 def create_app():
     # CREATE APP OBJECT
@@ -65,33 +55,6 @@ def create_app():
                       app.config['USER_COLLECTION_NAME'],
                       app.config['PROJECT_COLLECTION_NAME'],
                       app.config['PROJECT_DATA_COLLECTION_NAME'],
-                      logger=logger)
+                      app.config['IMAGE_DIR'])
 
     return app
-
-
-def main():
-    # DEVELOPMENT (Internal-facing, Debug on)
-    os.environ['FLASK_ENV']='development'
-
-    app = create_app()
-    logger = logging.getLogger(app.config['LOGGER_NAME'])
-    logger.info("App created")
-    app.app_context().push()
-    logger.info("App context pushed")
-
-    logger.info("Configuring mongo db skeleton")
-    # create mongo db skeleton
-    mongo_client = data_loader.get_mongo_client(app.config['MONGO_CONNECT_DICT'], tls_flag=False, tlsAllowInvalidCertificates=True)
-    build_mongo_db.run(mongo_client)
-
-    logger.info("Running App")
-    app.run(debug=True,
-            host='0.0.0.0',
-            port=5001,
-            extra_files=chain(Path.cwd().joinpath('app/templates').rglob('*.html'),
-                                Path.cwd().joinpath('app/static/styles').rglob('*.css'))
-            )
-
-if __name__ == '__main__':
-    main()
