@@ -1,7 +1,6 @@
 # How to use PieVal
 
-Assuming you have established a secure way to run the app by following [these instructions](README_run_app.md#production-mode), your next step will be to create a project by following [these instructions](README_project_management.md).  After these are complete, you can start collecting annotations in PieVal!
-
+This page will walk you through the mechanics of using pieval
 
 ### Splash Screen
 

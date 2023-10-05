@@ -17,8 +17,6 @@ services:
       - .:/pieval
     networks: 
       - net_pv
-    environment:
-      - AUTH_ENABLED=no
     command: gunicorn --preload -w 4 -b 0.0.0.0:5001 "app.wsgi:create_app()"
     depends_on:
       - mongo

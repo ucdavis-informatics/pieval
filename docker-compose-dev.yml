@@ -17,8 +17,6 @@ services:
       - .:/pieval
     networks: 
       - net_pv
-    environment:
-      - AUTH_ENABLED=no
     command: python run.py
     depends_on:
       - mongo

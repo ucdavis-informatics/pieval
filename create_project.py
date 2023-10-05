@@ -3,7 +3,6 @@ Author: Bill Riedl
 Purpose: To create a project in the pieval database from pre-existing JSON
 Please see docs/persistance.md for more information
 """
-
 # imports and config
 import argparse
 import json
@@ -86,10 +85,10 @@ parser.add_argument("--project_data_root_dir",
 
 def main():
     args = parser.parse_args()
-    project_data_root_dir = args.project_data_root_dir()
+    project_data_root_dir = args.project_data_root_dir
     print(f"Now creating a project based on data from {project_data_root_dir}")
 
-    mongo_client = mongo_common.get_mongo_client(config.MONGO_CONNECT_DICT)
+    mongo_client = mongo_common.get_mongo_client(config.CREAT_PROJ_MONGO_CONNECT_DICT, tls_flag=False, tlsAllowInvalidCertificates=True)
     
     run(mongo_client, config.DB_NAME, config.USER_COLLECTION_NAME, config.PROJECT_COLLECTION_NAME, config.PROJECT_DATA_COLLECTION_NAME,
         json_data_dir=project_data_root_dir)

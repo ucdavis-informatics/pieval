@@ -3,7 +3,7 @@ site_url: https://repos.ri.ucdavis.edu/docs/pieval/site
 site_description: Project documentation generated with love - powered by markdown and MkDocs
 site_author: Bill Riedl
 
-repo_url: ""
+repo_url: "https://hc2-gitlab.ucdmc.ucdavis.edu/ri/pydatautils/pieval"
 edit_uri: ""
 
 theme:
@@ -14,8 +14,8 @@ nav:
     - Home: index.md
     - Tech Details:
       - Running The App: README_run_app.md
-      - Persistance: README_Persistence.md
-      - Project Creation and Mangement: README_project_management.md
+      - Persistance: README_persistence.md
+      - App User Guide: README_using_the_app.md
     
 plugins:
     - search
