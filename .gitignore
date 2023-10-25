@@ -12,3 +12,5 @@ local*
 .idea/
 .DS_Store
 site/
+mongo_data/*
+!mongo_data/.empty

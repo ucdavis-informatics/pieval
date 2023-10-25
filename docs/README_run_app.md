@@ -2,8 +2,8 @@
 
 PieVal is a WebApplication that runs on top of the following technologies (starting from lowest, OS and working up)
 
-1. Linux VM - This can be any flavor of linux supported at UCDHS that is capable of running Docker
-1. Apache/httpd - This is web server that runs on linux.  It must be configured with a UCDHS AD proxy to whatever port the webapplication is running on inside of Docker
+1. Linux VM - This can be any flavor of linux that is capable of running Docker
+1. Apache/httpd - This is web server that runs on linux.  In production deployments, the webserver should proxy web trafffic to and from the webapp
 1. [Docker](https://www.docker.com/) - A technology for creating isolated runtime environments.
 1. [Docker Compose](https://www.docker.com/) - used to orchestrate 2 containers for this project
 1. Container 1 - WebApp
@@ -12,10 +12,9 @@ PieVal is a WebApplication that runs on top of the following technologies (start
     - [PieVal Application Code](https://gitlab.ri.ucdavis.edu/ri/pydatautils/pieval) - The code that makes PieVal, PieVal
 1. Container 2 - Mongo - provides persistance
 
-**NOTE:** Layers 1 and 2 can be modified to your liking.  They are only important in production.  For development only levels 3-5 are relevant (You only need Docker installed on your development system)
+**NOTE:** Layers 1 and 2 can be modified to your liking.  They are only important in production.  For development only levels 3-5 are relevant.  You can develop anywhere Docker is installed.
 
-
-The PieVal application needs to run in 2 different contexts:
+The PieVal application can run in 2 different contexts:
 
 1. Development - new feature development, patching, package upgrades, etc..
 1. Production - load balanced for multiple users, authentication, backed by robust persistence store
@@ -29,29 +28,26 @@ The repo is packaged with 2 docker compose files:
     - The mongo db container is started without a mapped volume which means no changes are saved from on development session to another
 1. docker-compose-prod.yml - launches the app in prod mode
     - The pieval command directive launches a gunicorn web app server suitable for production deployments
-    - The mongo db container is started with a bind mount to ./data:/data/db which will persist data at ./data permanently (you can configure this - [persistance in production](README_persistence.md#prod-mode))
+    - The mongo db container is started with a bind mount to ./mongo_data:/data/db which will persist data at ./mongo_data permanently (you can configure this - [pieval persistance](README_persistence.md))
 
 ### App Config
 
-The app reference config is located in ./instance/config.py.  This file is gitignored since it can contain sensitive information.  You will need to create one by copying example_config.py to config.py, then modyfing as needed.
+App config is located in ./instance/config.py.  This file is gitignored since it can contain sensitive information.  You will need to create one by copying instance/example_config.py to instance/config.py, then modyfing as needed.
 
 Some key fields in config.py:
 
 1. SECRET_KEY - used to encrypt the session object in flask.  This should be a long random string that is kept secure.
 1. AUTH_ENABLED - Toggles whether or not the app enables 'auth'.  The app DOES NOT have any built in authentication.  If you wish to enable auth see [auth section below](#auth)
-    - IF NO - the app is completely insecure.  It will allow you to sign in an any 'user'and gain access to all their projects simply by entering their usernam on the logon screen.
+    - IF NO - the app is completely insecure.  It will allow you emulate any 'user' simply by entering their username on the logon screen - this can be useful for debugging
     - IF YES - then the app assumes it is running behind an auth'd proxy and will expect {REMOTE_USER_HEADER_KEY} to be in the request headers.  If the value of {REMOTE_USER_HEADER_KEY} matches entries in user_list associated with each project then that user will be granted access to that project
+1 REMOTE_USER_HEADER_KEY - configurable value that allows for quickly updating which header key to look for in the request headers for previously authenticated username information.
 1. MONGO_CONNECT_DICT - The connection dictionary the app uses to authenticate into mongo DB.
 1. CREAT_PROJ_MONGO_CONNECT_DICT - The connection dictionary the create_project.py and delete_project.py scripts use to authenticate into the mongo db.  Since the app and the scripts may run in different contexts, these were seperated to allow flexibility
 
 
 **For more information about pieval persistance and mongodb, please see [persistance](README_persistence.md)**
 
-
-
-
 --- 
-
 ## Development mode
 
 In this mode the linux vm and apache/httpd (with associated auth) are irrelevant.  You will only be running from the Docker layer down through the application code.  It only takes one command to launch the app in dev mode:
@@ -66,8 +62,10 @@ This command:
 1. starts the app with an interactive shell so that you can view the logs
 1. Mounts the current directory (the pieval codebase) to the container so that the code is available to execute
 1. Forwards port 5001 from the container to the host - so you can navigate to the app running in the container
-1. Launches the application in the contaier by calling app/wsgi.py
-    - wsgi.py contains a main func for when its called in this context
+1. Launches the application in the contaier by calling run.py, which will:
+    - start the built in flask development server
+    - create an instance of the app
+    - spin up a sibling container to the webapp to host Mongo and load it with example data
 
 > NOTE: Since this is development mode, you can alter the code and the app will reload any changes allowing for rapid iteration
 

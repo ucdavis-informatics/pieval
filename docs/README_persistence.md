@@ -1,12 +1,13 @@
 # PieVal Persistance
 
-Persistance is handled by a MongoDB no matter what context you run the app in, Dev or Prod.  
+Persistance is handled by a MongoDB no matter what context you run the app in, Dev or Prod.  Out of the box, Mongo is run in a sibling container to the webapp. 
 
-- In [Dev](#dev-mode) mode the persistance is treated as completely emphemeral and example data is packaged with the app to allow for development/testing/demos/etc...
-- In [Prod](#prod-mode) mode, you have a few options to prevent the data from vaporizing when you shut down the app.  All three options have tradeoffs
-    - Use Docker built in volumes
-    - Use Docker bind mounts
-    - Use a pre-exsiting mongoDB you're already running
+- In [Dev](#dev-mode) mode the persistance is treated as completely emphemeral and example data is packaged with the app to allow for development/testing/demos/etc.  This is accomplished by NOT providing a volume or bind mount to the mongo container in the docker compose files.  The consequence of this is that every time the mongo container is started its started as a blank database.  This is why running the app in dev mode uses run.py, which explicitly calls create_project.py during app startup to load example data you can use to test app functionality!
+- In [Prod](#prod-mode) mode, you have a few options to prevent the data from vaporizing when you shut down the app.  All three options have tradeoffs.
+    - Use Docker persistence options - see [Prod Mode Docker config examples](#prod-mode-docker-config-examples):
+        - Use Docker built in volumes - this will result in a docker controlled filesystem location to maintain your data between sessions.  This is easy but ties you to whatever Docker allows in terms of backup and restore (read portability)
+        - Use Docker bind mounts - this will
+    - Use a pre-exsiting mongoDB you're already running.  This will allow you to ignore the mongo service thats started in the Docker Compose files and instead just wire your app into your pre-existing mongo using the instance/config.py file
 
 ---
 ## Database Structure
@@ -122,9 +123,37 @@ python delete_project.py --project_name <name of project to delete>
 ```
 
 ---
-## Dev Mode
+## Prod Mode Docker Config Examples
+
+If you choose to productionize this app using a docker container to run mongo, these instructions will help you persist your data between app runtimes.  There are 2 options:
+
+1. Docker Volumes
+1. Docker Bind Mount
+
+Both of these save your data to the host os disk, however Docker Volumes save the data to an area of the disk Docker Controls and a Bind Mount will save data to disk at a specific file path of your choosing.  You can choose whatever you'd like but Mongo is pretty well behaved in terms of saving all its data nested under a single directory.  This makes it extremely easy to manage this with a Bind Mount.  Creating copies of the directory will act as effective and cheap backups of your mongo data.
+
+
+**To use a Bind Mount** add this line to the mongo stanza of docker-compose-prod.yml:
+
+```yml
+volumes:
+    - /path/to/local/fs/location:/data/db
+```
+
+> /path/to/local/fs/location must be an existing directory, preferrably empty, and must be writeable by the docker container, which may require some permissions changes
 
 
 
----
-## Prod Mode
+**To use a Docker Volume** add these lines to docker-compose-prod.yml:
+
+```yml
+# nested under mongo stanza
+volumes:
+      - mongodata:/data/db
+
+# at bottom of docker-compose-prod
+volumes:
+    mongodata:
+```
+
+Should you choose to use Docker volumes and ever find yourself needing to move the app from one Docker Host to another, here are some tips for bringing your volume data with you: https://www.docker.com/blog/back-up-and-share-docker-volumes-with-this-extension/ 

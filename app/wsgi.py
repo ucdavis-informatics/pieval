@@ -37,7 +37,6 @@ def create_app():
     logger.info("Logger Configured")
 
     logger.info("Registering which auth mode the app is in: ")
-    app.config['AUTH_ENABLED'] = os.environ.get('AUTH_ENABLED')
     logger.info("App AUTH MODE is %s", app.config['AUTH_ENABLED'])
 
     # register blueprints

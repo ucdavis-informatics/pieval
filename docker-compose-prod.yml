@@ -1,4 +1,6 @@
-# starts pieval webapp and associated mongo container - used to launch services for development purposes
+# starts pieval webapp and associated mongo container - in a production mode
+# NOT using the Flask dev server, instead using gunicorn wsgi server
+# Persists data by using a bind mount with the mongo container - see docs/README_persistence.md for more information
 
 version: "3.8"
 
@@ -29,3 +31,5 @@ services:
       - 27017
     ports:
       - "27017:27017"
+    volumes:
+      - ./mongo_data:/data/db
